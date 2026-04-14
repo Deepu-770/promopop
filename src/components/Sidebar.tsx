@@ -1,18 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, BarChart2, Settings, Layers, Moon, Sun, LogIn, LogOut, User as UserIcon, Calendar, PanelLeftClose, PanelLeftOpen, Pin, PinOff } from 'lucide-react';
+import { Home, BarChart2, Settings, Layers, Calendar, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { auth, googleProvider } from '@/src/lib/firebase';
-import { signInWithPopup, signOut, User } from 'firebase/auth';
 import { TodoPanel } from './TodoPanel';
 import { TodoTask } from '../types';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-  user: User | null;
   isPinned: boolean;
   setIsPinned: (v: boolean) => void;
   tasks: TodoTask[];
@@ -25,9 +20,6 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ 
   activeTab, 
   setActiveTab, 
-  theme, 
-  toggleTheme, 
-  user,
   isPinned,
   setIsPinned,
   tasks,
@@ -45,36 +37,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const isExpanded = isPinned;
 
   const handleTogglePin = () => {
     setIsPinned(!isPinned);
-  };
-
-  const handleLogin = async () => {
-    if (isLoggingIn) return;
-    setIsLoggingIn(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
-        console.log('Login cancelled by user');
-      } else {
-        console.error('Login failed', error);
-      }
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
   };
 
   return (
@@ -88,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
         "h-full flex flex-col border-r border-[#E5E5E5] dark:border-white/5 transition-colors duration-300 overflow-hidden shrink-0",
-        "bg-[var(--color-sidebar-light)] dark:bg-[#171717] backdrop-blur-2xl"
+        "bg-[var(--color-sidebar-light)] dark:bg-[#171717]"
       )}
     >
       {/* Header / Logo / Toggle */}
@@ -187,65 +154,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Actions */}
       <div className="px-[12px] py-4 space-y-1 border-t border-black/5 dark:border-white/5 shrink-0">
-        {user ? (
-          <button
-            onClick={handleLogout}
-            className="flex items-center h-11 w-full rounded-xl px-[10px] hover:bg-white/50 dark:hover:bg-white/5 transition-colors group text-[#6E6E80] hover:text-[#0D0D0D] dark:text-white/60 dark:hover:text-white"
+        <div className="flex items-center h-11 w-full px-[10px] text-[#6E6E80] dark:text-white/40">
+          <motion.span 
+            animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -10 }}
+            className="truncate text-[10px] font-bold uppercase tracking-widest"
           >
-            {user.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-5 h-5 rounded-full shrink-0" referrerPolicy="no-referrer" />
-            ) : (
-              <UserIcon className="w-5 h-5 shrink-0 opacity-60" />
-            )}
-            <motion.span 
-              animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -10 }}
-              className="ml-4 truncate text-xs font-medium"
-            >
-              Logout
-            </motion.span>
-          </button>
-        ) : (
-          <button
-            onClick={handleLogin}
-            disabled={isLoggingIn}
-            className="flex items-center h-11 w-full rounded-xl px-[10px] hover:bg-white/50 dark:hover:bg-white/5 transition-colors text-[#6E6E80] hover:text-[#0D0D0D] dark:text-white/60 dark:hover:text-white"
-          >
-            <LogIn className={cn("w-5 h-5 shrink-0 opacity-60", isLoggingIn && "animate-pulse")} />
-            <motion.span 
-              animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -10 }}
-              className="ml-4 truncate text-sm font-medium"
-            >
-              {isLoggingIn ? 'Connecting...' : 'Login'}
-            </motion.span>
-          </button>
-        )}
-
-        <button
-          onClick={toggleTheme}
-          className="flex items-center h-11 w-full rounded-xl px-[10px] hover:bg-white/50 dark:hover:bg-white/5 transition-colors text-[#6E6E80] hover:text-[#0D0D0D] dark:text-white/60 dark:hover:text-white"
-        >
-          {theme === 'light' ? (
-            <>
-              <Moon className="w-5 h-5 shrink-0 opacity-60" />
-              <motion.span 
-                animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -10 }}
-                className="ml-4 truncate text-sm font-medium"
-              >
-                Dark Mode
-              </motion.span>
-            </>
-          ) : (
-            <>
-              <Sun className="w-5 h-5 shrink-0 opacity-60" />
-              <motion.span 
-                animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -10 }}
-                className="ml-4 truncate text-sm font-medium"
-              >
-                Light Mode
-              </motion.span>
-            </>
-          )}
-        </button>
+            Promograd v1.0
+          </motion.span>
+        </div>
       </div>
     </motion.div>
   );

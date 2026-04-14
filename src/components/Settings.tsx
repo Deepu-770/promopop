@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings as SettingsType } from '@/src/types';
-import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Moon, Plus, X, Settings2, Clock } from 'lucide-react';
+import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Plus, X, Settings2, Clock, Zap } from 'lucide-react';
 
 interface SettingsProps {
   settings: SettingsType;
@@ -82,7 +82,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
-                <Moon className="w-5 h-5 text-orange-500" />
+                <Zap className="w-5 h-5 text-orange-500" />
               </div>
               <div>
                 <div className="font-medium text-[#0D0D0D] dark:text-white">Auto Do Not Disturb</div>

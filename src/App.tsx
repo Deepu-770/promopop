@@ -26,14 +26,11 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { FocusMode, MODES, Session, Settings } from './types';
 import { calculateStreak, cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, onSnapshot, writeBatch, getDocs, deleteDoc } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import { Share2, Layers } from 'lucide-react';
 
 const DEFAULT_SETTINGS: Settings = {
-  theme: 'light',
+  theme: 'dark',
   notifications: true,
   sound: true,
   customFocusDuration: 25,
@@ -56,7 +53,6 @@ export default function App() {
   const [currentIntention, setCurrentIntention] = useState('');
   const [currentCategory, setCurrentCategory] = useState<Category>('Study');
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [sessions, setSessions] = useLocalStorage<Session[]>('promograd_sessions', []);
   const [settings, setSettings] = useLocalStorage<Settings>('promograd_settings', DEFAULT_SETTINGS);
   const [tasks, setTasks] = useLocalStorage<TodoTask[]>('promograd_tasks', []);
@@ -65,106 +61,11 @@ export default function App() {
 
   // Migration: Ensure settings has all required fields
   useEffect(() => {
-    const migratedSettings = { ...DEFAULT_SETTINGS, ...settings };
+    const migratedSettings = { ...DEFAULT_SETTINGS, ...settings, theme: 'dark' as const };
     if (JSON.stringify(migratedSettings) !== JSON.stringify(settings)) {
       setSettings(migratedSettings);
     }
   }, [settings, setSettings]);
-
-  // Sync Tasks with Firestore
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'tasks'), where('uid', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cloudTasks = snapshot.docs.map(doc => doc.data() as TodoTask);
-      setTasks(prev => {
-        const localIds = new Set(prev.map(t => t.id));
-        const newFromCloud = cloudTasks.filter(t => !localIds.has(t.id));
-        return [...prev, ...newFromCloud];
-      });
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  // Sync Journals with Firestore
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'journals'), where('uid', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cloudJournals = snapshot.docs.map(doc => doc.data() as DailyJournal);
-      setJournals(prev => {
-        const localIds = new Set(prev.map(j => j.id));
-        const newFromCloud = cloudJournals.filter(j => !localIds.has(j.id));
-        return [...prev, ...newFromCloud];
-      });
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  const pushJournalToCloud = useCallback(async (journal: DailyJournal) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, 'journals', journal.id), { ...journal, uid: user.uid });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `journals/${journal.id}`);
-    }
-  }, [user]);
-
-  const pushTaskToCloud = useCallback(async (task: TodoTask) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, 'tasks', task.id), { ...task, uid: user.uid });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `tasks/${task.id}`);
-    }
-  }, [user]);
-
-  // Firebase Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Sync with Firestore
-  useEffect(() => {
-    if (!user) return;
-
-    // Sync Sessions
-    const q = query(collection(db, 'sessions'), where('uid', '==', user.uid));
-    const unsubscribeSessions = onSnapshot(q, (snapshot) => {
-      const cloudSessions = snapshot.docs.map(doc => doc.data() as Session);
-      // Merge logic: prefer cloud if local is empty, or merge by ID
-      setSessions(prev => {
-        const localIds = new Set(prev.map(s => s.id));
-        const newFromCloud = cloudSessions.filter(s => !localIds.has(s.id));
-        return [...prev, ...newFromCloud].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      });
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'sessions'));
-
-    // Sync Settings
-    const settingsRef = doc(db, 'users', user.uid);
-    const unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.settings) {
-          setSettings(prev => {
-            const newSettings = { ...prev, ...data.settings };
-            // Update MODES for custom mode
-            MODES.custom.focusDuration = newSettings.customFocusDuration;
-            MODES.custom.breakDuration = newSettings.customBreakDuration;
-            return newSettings;
-          });
-        }
-      }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
-
-    return () => {
-      unsubscribeSessions();
-      unsubscribeSettings();
-    };
-  }, [user]);
 
   // Handle local settings changes for custom mode
   useEffect(() => {
@@ -172,41 +73,12 @@ export default function App() {
     MODES.custom.breakDuration = settings.customBreakDuration;
   }, [settings.customFocusDuration, settings.customBreakDuration]);
 
-  // Push local changes to cloud
-  const pushSessionToCloud = useCallback(async (session: Session) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, 'sessions', session.id), { ...session, uid: user.uid });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `sessions/${session.id}`);
-    }
-  }, [user]);
-
-  const pushSettingsToCloud = useCallback(async (newSettings: Settings) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, 'users', user.uid), { 
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        settings: newSettings 
-      }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
-    }
-  }, [user]);
-
   const streak = useMemo(() => calculateStreak(sessions), [sessions]);
 
-  // Update theme on body
+  // Force dark mode on body
   useEffect(() => {
-    if (settings.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [settings.theme]);
+    document.documentElement.classList.add('dark');
+  }, []);
 
   const notify = useCallback((title: string, body: string) => {
     if (settings.notifications && Notification.permission === 'granted') {
@@ -254,21 +126,19 @@ export default function App() {
       taskId: currentTaskId || undefined,
     };
     setSessions((prev) => [...prev, newSession]);
-    pushSessionToCloud(newSession);
     
     if (currentTaskId) {
       const task = tasks.find(t => t.id === currentTaskId);
       if (task) {
         const updatedTask = { ...task, completed: true };
         setTasks(prev => prev.map(t => t.id === currentTaskId ? updatedTask : t));
-        pushTaskToCloud(updatedTask);
       }
     }
 
     setIsReflectionModalOpen(false);
     setCurrentIntention('');
     setCurrentTaskId(null);
-  }, [currentMode, currentIntention, currentCategory, currentTaskId, tasks, setSessions, pushSessionToCloud, pushTaskToCloud]);
+  }, [currentMode, currentIntention, currentCategory, currentTaskId, tasks, setSessions]);
 
   const onBreakComplete = useCallback(() => {
     notify('Break Over!', 'Ready to focus again?');
@@ -368,15 +238,12 @@ export default function App() {
       createdAt: new Date().toISOString(),
     };
     setTasks(prev => [...prev, newTask]);
-    pushTaskToCloud(newTask);
   };
 
   const handleToggleTask = (id: string) => {
     setTasks(prev => prev.map(t => {
       if (t.id === id) {
-        const updated = { ...t, completed: !t.completed };
-        pushTaskToCloud(updated);
-        return updated;
+        return { ...t, completed: !t.completed };
       }
       return t;
     }));
@@ -384,13 +251,6 @@ export default function App() {
 
   const handleDeleteTask = async (id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
-    if (user) {
-      try {
-        await deleteDoc(doc(db, 'tasks', id));
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, `tasks/${id}`);
-      }
-    }
   };
 
   const handleStartFromTask = (task: TodoTask) => {
@@ -457,7 +317,6 @@ export default function App() {
                 const filtered = prev.filter(j => j.id !== todayId);
                 return [...filtered, newJournal];
               });
-              pushJournalToCloud(newJournal);
             }}
           />
         );
@@ -466,32 +325,14 @@ export default function App() {
           <SettingsPanel
             settings={settings}
             updateSettings={(s) => {
-              const newSettings = { ...settings, ...s };
+              const newSettings = { ...settings, ...s, theme: 'dark' as const };
               setSettings(newSettings);
-              pushSettingsToCloud(newSettings);
             }}
             onResetData={async () => {
-              const warning = user 
-                ? 'Are you sure? This will delete all your data from the CLOUD and this system. This cannot be undone.'
-                : 'Are you sure you want to reset all data? This cannot be undone.';
-              
-              if (confirm(warning)) {
-                if (user) {
-                  // Delete from Cloud
-                  const q = query(collection(db, 'sessions'), where('uid', '==', user.uid));
-                  const snapshot = await getDocs(q);
-                  const batch = writeBatch(db);
-                  snapshot.docs.forEach(d => batch.delete(d.ref));
-                  
-                  const tq = query(collection(db, 'tasks'), where('uid', '==', user.uid));
-                  const tsnapshot = await getDocs(tq);
-                  tsnapshot.docs.forEach(d => batch.delete(d.ref));
-                  
-                  await batch.commit();
-                  await deleteDoc(doc(db, 'users', user.uid));
-                }
+              if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
                 setSessions([]);
                 setTasks([]);
+                setJournals([]);
               }
             }}
             onExport={handleExport}
@@ -554,14 +395,6 @@ export default function App() {
           <Sidebar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            theme={settings.theme}
-            toggleTheme={() => {
-              const newTheme: 'light' | 'dark' = settings.theme === 'light' ? 'dark' : 'light';
-              const newSettings: Settings = { ...settings, theme: newTheme };
-              setSettings(newSettings);
-              pushSettingsToCloud(newSettings);
-            }}
-            user={user}
             isPinned={isSidebarPinned}
             setIsPinned={setIsSidebarPinned}
             tasks={tasks}

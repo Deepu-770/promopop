@@ -83,8 +83,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ sessions = [], tasks =
       {/* Header Section */}
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <h2 className="text-3xl font-bold text-[#374151] dark:text-white">Daily Review</h2>
-          <p className="text-[#4B5563] dark:text-white flex items-center gap-2 text-base">
+          <h2 className="text-3xl font-bold text-white">Daily Review</h2>
+          <p className="text-white/60 flex items-center gap-2 text-base">
             <Calendar className="w-4 h-4" />
             {format(today, 'EEEE, MMMM do')}
           </p>

@@ -2,56 +2,55 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
   --color-primary: #007AFF;
   --color-secondary: #5856D6;
+
   --color-bg-light: #FFFFFF;
   --color-bg-dark: #212121;
-  --color-card-light: #F7F7F8;
-  --color-sidebar-light: #F7F7F8;
+
+  --color-card-light: #F9F9F9;
   --color-card-dark: #2A2A2A;
+
+  /* ✅ Sidebar colors */
+  --color-sidebar-light: #F7F7F8;
+  --color-sidebar-dark: #171717;
+
+  /* ✅ Text colors */
+  --color-text-light: #0D0D0D;
+  --color-text-dark: #FFFFFF;
+  --color-text-secondary-light: #6E6E80;
 }
 
 @layer base {
   body {
     @apply font-sans antialiased overflow-hidden;
-    background-color: var(--color-bg-light);
-    color: #0D0D0D;
-  }
-
-  .dark body {
     background-color: var(--color-bg-dark);
-    color: #FFFFFF;
+    color: var(--color-text-dark);
   }
 
-  /* Ensure text is visible in light mode */
   h1, h2, h3, h4, h5, h6 {
-    @apply text-[#0D0D0D] dark:text-white;
-    -webkit-text-stroke: 0px transparent;
+    color: var(--color-text-dark);
     letter-spacing: -0.02em;
   }
 
   p, span, div, button, input, textarea {
-    @apply text-[#0D0D0D] dark:text-white;
+    color: var(--color-text-dark);
     font-weight: 500;
   }
 
   .text-secondary-light {
-    @apply text-[#6E6E80];
+    color: var(--color-text-secondary-light);
+    opacity: 0.6;
   }
 
-  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
-    -webkit-text-stroke: 0px transparent;
-    letter-spacing: normal;
-  }
-}
-
-@layer components {
   .glass-panel {
-    @apply bg-[var(--color-card-light)] backdrop-blur-2xl border border-[#E5E5E5] shadow-none;
-  }
-  
-  .dark .glass-panel {
     @apply bg-[var(--color-card-dark)]/80 backdrop-blur-xl border border-white/10 shadow-none;
+  }
+
+  .sidebar {
+    background-color: var(--color-sidebar-dark);
+    @apply h-full border-r border-white/10;
   }
 
   .btn-primary {
@@ -71,7 +70,7 @@
   }
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
