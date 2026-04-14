@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #007AFF;
+  --color-secondary: #5856D6;
+  --color-bg-light: #FFFFFF;
+  --color-bg-dark: #212121;
+  --color-card-light: #F7F7F8;
+  --color-sidebar-light: #F7F7F8;
+  --color-card-dark: #2A2A2A;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased overflow-hidden;
+    background-color: var(--color-bg-light);
+    color: #0D0D0D;
+  }
+
+  .dark body {
+    background-color: var(--color-bg-dark);
+    color: #FFFFFF;
+  }
+
+  /* Ensure text is visible in light mode */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-[#0D0D0D] dark:text-white;
+    -webkit-text-stroke: 0px transparent;
+    letter-spacing: -0.02em;
+  }
+
+  p, span, div, button, input, textarea {
+    @apply text-[#0D0D0D] dark:text-white;
+    font-weight: 500;
+  }
+
+  .text-secondary-light {
+    @apply text-[#6E6E80];
+  }
+
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    -webkit-text-stroke: 0px transparent;
+    letter-spacing: normal;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-[var(--color-card-light)] backdrop-blur-2xl border border-[#E5E5E5] shadow-none;
+  }
+  
+  .dark .glass-panel {
+    @apply bg-[var(--color-card-dark)]/80 backdrop-blur-xl border border-white/10 shadow-none;
+  }
+
+  .btn-primary {
+    @apply px-6 py-2 bg-primary text-white rounded-full font-medium transition-all hover:opacity-90 active:scale-95;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer;
+  }
+
+  .sidebar-item.active {
+    @apply bg-primary/10 text-primary font-semibold;
+  }
+
+  .dark .sidebar-item.active {
+    @apply bg-primary/20 text-primary;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}

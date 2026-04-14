@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "settings": { "$ref": "Settings" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "Focus session data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "mode": { "type": "string", "enum": ["reading", "lecture", "custom"] },
+        "startTime": { "type": "number" },
+        "duration": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "mode", "duration", "timestamp"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User application settings",
+      "type": "object",
+      "properties": {
+        "theme": { "type": "string", "enum": ["light", "dark"] },
+        "notifications": { "type": "boolean" },
+        "sound": { "type": "boolean" },
+        "customFocusDuration": { "type": "number" },
+        "customBreakDuration": { "type": "number" }
+      }
+    },
+    "TodoTask": {
+      "title": "TodoTask",
+      "description": "A task in the todo list",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "text": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "text", "completed", "createdAt"]
+    },
+    "DailyJournal": {
+      "title": "DailyJournal",
+      "description": "A daily reflection journal entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "content": { "type": "string" },
+        "mood": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "content", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Individual focus sessions"
+    },
+    "/tasks/{taskId}": {
+      "schema": "TodoTask",
+      "description": "User tasks"
+    },
+    "/journals/{journalId}": {
+      "schema": "DailyJournal",
+      "description": "User journal entries"
+    }
+  }
+}

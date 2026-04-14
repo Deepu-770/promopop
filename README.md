@@ -1,20 +1,77 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Promograd
 
-# Run and deploy your AI Studio app
+Promograd is a premium productivity and study management tool designed for students and learners. It combines Pomodoro logic with structured study modes and detailed analytics.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/6230820e-6a93-46c4-94e5-2d8954abc7be
+- **Intelligent Focus Modes**:
+  - **Reading Mode**: 25m focus / 5m break.
+  - **Lecture Mode**: 60m focus / 15m break.
+  - **Custom Mode**: Fully configurable durations.
+- **Dynamic Timer**: Countdown with auto-transitions and progress visualization.
+- **Analytics Dashboard**:
+  - Weekly focus time charts.
+  - GitHub-style intensity heatmap.
+  - Session count and mode-wise breakdown.
+- **Minimized Widget Mode**: A compact, floating UI for unobtrusive focus tracking.
+- **Local Persistence**: All data is stored locally on your machine.
+- **Export Options**: Export your focus data to JSON or CSV.
+- **Premium UI**: Inspired by Apple and Microsoft design languages with Light and Dark mode support.
 
-## Run Locally
+## Tech Stack
 
-**Prerequisites:**  Node.js
+- **Frontend**: React 19, TypeScript, Tailwind CSS 4.
+- **Animations**: Motion (Framer Motion).
+- **Icons**: Lucide React.
+- **Charts**: Recharts.
+- **Desktop Wrapper**: Electron.
 
+## Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm
+
+### Installation
+
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+To run the application in the browser:
+```bash
+npm run dev
+```
+
+To run the application as a desktop app (Electron):
+```bash
+npm run electron:dev
+```
+
+### Build
+
+To build the web version:
+```bash
+npm run build
+```
+
+To package the application as a Windows `.exe`:
+```bash
+npm run electron:build
+```
+
+## Architecture
+
+- `src/components`: UI components organized by feature.
+- `src/hooks`: Custom hooks for timer logic and local storage.
+- `src/types.ts`: Shared TypeScript interfaces and constants.
+- `electron-main.js`: Main process entry point for Electron.
+
+## License
+
+SPDX-License-Identifier: Apache-2.0
