@@ -47,6 +47,9 @@ export interface Settings {
   blockedWebsites: string[];
   autoDND: boolean;
   backgroundMusic: boolean;
+  selectedMusic?: string;
+  likedTracks?: string[];
+  dislikedTracks?: string[];
 }
 
 export const MODES: Record<FocusMode, ModeConfig> = {

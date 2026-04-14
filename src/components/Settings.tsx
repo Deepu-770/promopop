@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Settings as SettingsType } from '@/src/types';
-import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Plus, X, Settings2, Clock, Zap } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
+import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Plus, X, Settings2, Clock, Zap, Github } from 'lucide-react';
+import { LOFI_TRACKS, APP_VERSION } from '../constants';
 
 interface SettingsProps {
   settings: SettingsType;
@@ -114,6 +116,24 @@ export const Settings: React.FC<SettingsProps> = ({
               className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
             />
           </div>
+
+          {settings.backgroundMusic && (
+            <div className="pl-13 space-y-3">
+              <label className="text-xs font-bold text-[#6E6E80] dark:text-white/40 uppercase tracking-wider">Select Nature Sound</label>
+              <select
+                value={settings.selectedMusic}
+                onChange={(e) => updateSettings({ selectedMusic: e.target.value })}
+                className="w-full bg-white/5 dark:bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none text-sm font-bold text-white/80 hover:bg-white/10 transition-all cursor-pointer appearance-none"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+              >
+                {LOFI_TRACKS.filter(t => !(settings.dislikedTracks || []).includes(t.id)).map(track => (
+                  <option key={track.id} value={track.id} className="bg-[#1A1A1A] text-white">
+                    {track.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -144,32 +164,33 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </div>
 
-      <div className="glass-panel p-6 rounded-3xl space-y-6 border border-[#E5E5E5] dark:border-white/10">
-        <div className="flex items-center gap-3">
-          <Shield className="w-5 h-5 text-red-500" />
-          <h3 className="text-lg font-semibold text-[#0D0D0D] dark:text-white">Distraction Blocking</h3>
+      <div className="glass-panel p-6 rounded-3xl space-y-6 border border-[#E5E5E5] dark:border-white/10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-red-500 px-4 py-1.5 rounded-full text-[10px] font-bold text-white uppercase tracking-widest shadow-lg shadow-red-500/20 mb-4">
+            Coming Soon
+          </div>
+          <p className="text-xs font-medium text-white/60 max-w-[240px] leading-relaxed">
+            Future updates will include AI-powered app blocking, deep work lockdown mode, and cross-device focus sync.
+          </p>
+        </div>
+        <div className="flex items-center justify-between opacity-30">
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-red-500" />
+            <h3 className="text-lg font-semibold text-[#0D0D0D] dark:text-white">Distraction Blocking</h3>
+          </div>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-6 opacity-30">
           <div className="space-y-3">
             <label className="text-xs font-bold text-[#6E6E80] dark:text-white/40 uppercase tracking-wider">Blocked Apps (Windows Processes)</label>
             <div className="flex gap-2">
               <input
                 type="text"
-                value={newApp}
-                onChange={(e) => setNewApp(e.target.value)}
+                disabled
                 placeholder="e.g., chrome.exe, discord.exe"
                 className="flex-1 bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 rounded-xl px-4 py-2 outline-none text-[#0D0D0D] dark:text-white"
               />
-              <button onClick={addApp} className="p-2 bg-primary text-white rounded-xl"><Plus className="w-5 h-5" /></button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(settings.blockedApps || []).map(app => (
-                <div key={app} className="flex items-center gap-2 bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 px-3 py-1 rounded-lg text-xs font-medium text-[#0D0D0D] dark:text-white">
-                  {app}
-                  <button onClick={() => updateSettings({ blockedApps: (settings.blockedApps || []).filter(a => a !== app) })}><X className="w-3 h-3" /></button>
-                </div>
-              ))}
+              <button disabled className="p-2 bg-primary text-white rounded-xl"><Plus className="w-5 h-5" /></button>
             </div>
           </div>
 
@@ -178,20 +199,11 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={newSite}
-                onChange={(e) => setNewSite(e.target.value)}
+                disabled
                 placeholder="e.g., youtube.com, twitter.com"
                 className="flex-1 bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 rounded-xl px-4 py-2 outline-none text-[#0D0D0D] dark:text-white"
               />
-              <button onClick={addSite} className="p-2 bg-primary text-white rounded-xl"><Plus className="w-5 h-5" /></button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(settings.blockedWebsites || []).map(site => (
-                <div key={site} className="flex items-center gap-2 bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 px-3 py-1 rounded-lg text-xs font-medium text-[#0D0D0D] dark:text-white">
-                  {site}
-                  <button onClick={() => updateSettings({ blockedWebsites: (settings.blockedWebsites || []).filter(s => s !== site) })}><X className="w-3 h-3" /></button>
-                </div>
-              ))}
+              <button disabled className="p-2 bg-primary text-white rounded-xl"><Plus className="w-5 h-5" /></button>
             </div>
           </div>
         </div>
@@ -245,6 +257,11 @@ export const Settings: React.FC<SettingsProps> = ({
             <span className="font-medium">Reset All Data</span>
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center py-6 opacity-20">
+        <div className="text-[10px] font-bold uppercase tracking-[0.4em]">Promograd {APP_VERSION}</div>
+        <div className="mt-2 text-[8px] font-medium">Built for Deep Focus</div>
       </div>
     </div>
   );

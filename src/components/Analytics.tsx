@@ -22,9 +22,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
     };
   });
 
-  // Process data for the heatmap (last 30 days)
-  const heatmapData = Array.from({ length: 30 }, (_, i) => {
-    const date = subDays(new Date(), 29 - i);
+  // Process data for the heatmap (last 365 days)
+  const heatmapData = Array.from({ length: 365 }, (_, i) => {
+    const date = subDays(new Date(), 364 - i);
     const daySessions = (sessions || []).filter(s => isSameDay(new Date(s.timestamp), date));
     const totalMinutes = Math.round(daySessions.reduce((acc, s) => acc + s.duration, 0) / 60);
     return { date, intensity: Math.min(Math.ceil(totalMinutes / 30), 4) }; // 0-4 intensity
@@ -47,12 +47,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
     : 0;
 
   // Focus Consistency Score (0-100)
-  const activeDaysLast30 = new Set(
+  const activeDaysLastYear = new Set(
     (sessions || [])
-      .filter(s => new Date(s.timestamp) > subDays(new Date(), 30))
+      .filter(s => new Date(s.timestamp) > subDays(new Date(), 365))
       .map(s => format(new Date(s.timestamp), 'yyyy-MM-dd'))
   ).size;
-  const consistencyScore = Math.round((activeDaysLast30 / 30) * 100);
+  const consistencyScore = Math.round((activeDaysLastYear / 365) * 100);
 
   // Average Session Quality
   const avgQuality = (sessions || []).length > 0
@@ -60,7 +60,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
     : 0;
 
   return (
-    <div className="space-y-8 p-2 overflow-y-auto max-h-full">
+    <div className="space-y-8 p-2 overflow-y-auto max-h-full scrollbar-hide">
       <div className="grid grid-cols-3 gap-6">
         <div className="glass-panel p-6 rounded-3xl border border-white/10">
           <div className="text-sm font-medium text-white/50 mb-1">Total Focus Time</div>
@@ -183,6 +183,86 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
           <div className="space-y-1">
             <h4 className="text-xl font-bold text-white">Focus Quality</h4>
             <p className="text-sm text-white/40 max-w-[200px]">Your average session rating based on daily reflections</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-panel p-8 rounded-3xl border border-white/10">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-xl font-bold text-white">Focus Consistency</h3>
+            <p className="text-sm text-white/40">Your activity over the last year</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {/* Month Labels */}
+          <div className="flex pl-10 justify-between text-[10px] font-bold text-white/20 uppercase tracking-widest mb-1">
+            <span>Apr</span>
+            <span>May</span>
+            <span>Jun</span>
+            <span>Jul</span>
+            <span>Aug</span>
+            <span>Sep</span>
+            <span>Oct</span>
+            <span>Nov</span>
+            <span>Dec</span>
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>Mar</span>
+            <span>Apr</span>
+          </div>
+
+          <div className="flex gap-4">
+            {/* Day Labels */}
+            <div className="flex flex-col justify-between py-1 text-[10px] font-bold text-white/20 uppercase tracking-tighter h-[100px]">
+              <span>Mon</span>
+              <span>Wed</span>
+              <span>Fri</span>
+            </div>
+
+            {/* Heatmap Grid */}
+            <div className="flex-1 flex gap-1 overflow-x-auto pb-4 scrollbar-hide">
+              {Array.from({ length: 53 }, (_, weekIndex) => (
+                <div key={weekIndex} className="flex flex-col gap-1 shrink-0">
+                  {Array.from({ length: 7 }, (_, dayIndex) => {
+                    const dataIndex = weekIndex * 7 + dayIndex;
+                    if (dataIndex >= heatmapData.length) return null;
+                    const day = heatmapData[dataIndex];
+                    return (
+                      <div
+                        key={dayIndex}
+                        title={`${format(day.date, 'MMM d, yyyy')}: ${day.intensity} intensity`}
+                        className={cn(
+                          "w-3 h-3 rounded-[2px] transition-all duration-500",
+                          day.intensity === 0 && "bg-white/5",
+                          day.intensity === 1 && "bg-[#0e4429]",
+                          day.intensity === 2 && "bg-[#006d32]",
+                          day.intensity === 3 && "bg-[#26a641]",
+                          day.intensity === 4 && "bg-[#39d353]"
+                        )}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] text-white/20 font-medium">Learn how we count contributions</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/20">Less</span>
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-[2px] bg-white/5" />
+                <div className="w-3 h-3 rounded-[2px] bg-[#0e4429]" />
+                <div className="w-3 h-3 rounded-[2px] bg-[#006d32]" />
+                <div className="w-3 h-3 rounded-[2px] bg-[#26a641]" />
+                <div className="w-3 h-3 rounded-[2px] bg-[#39d353]" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/20">More</span>
+            </div>
           </div>
         </div>
       </div>

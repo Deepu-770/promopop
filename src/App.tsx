@@ -29,6 +29,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Share2, Layers } from 'lucide-react';
 
+import { LOFI_TRACKS, APP_VERSION } from './constants';
+
 const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   notifications: true,
@@ -39,6 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
   blockedWebsites: [],
   autoDND: true,
   backgroundMusic: false,
+  selectedMusic: 'nature-1',
 };
 
 export default function App() {
@@ -50,6 +53,7 @@ export default function App() {
   const [isSocialCardOpen, setIsSocialCardOpen] = useState(false);
   const [isIntentionModalOpen, setIsIntentionModalOpen] = useState(false);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [currentIntention, setCurrentIntention] = useState('');
   const [currentCategory, setCurrentCategory] = useState<Category>('Study');
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
@@ -165,9 +169,11 @@ export default function App() {
 
   // Background Music Logic
   useEffect(() => {
-    if (isActive && !isBreak && settings.backgroundMusic) {
-      if (!musicRef.current) {
-        musicRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'); // Placeholder lo-fi
+    if (isMusicPlaying) {
+      const track = LOFI_TRACKS.find(t => t.id === settings.selectedMusic) || LOFI_TRACKS[0];
+      if (!musicRef.current || musicRef.current.src !== track.url) {
+        if (musicRef.current) musicRef.current.pause();
+        musicRef.current = new Audio(track.url);
         musicRef.current.loop = true;
       }
       musicRef.current.play().catch(() => {});
@@ -176,7 +182,56 @@ export default function App() {
         musicRef.current.pause();
       }
     }
+  }, [settings.selectedMusic, isMusicPlaying]);
+
+  // Sync isMusicPlaying with settings.backgroundMusic when session starts
+  useEffect(() => {
+    if (isActive && !isBreak && settings.backgroundMusic) {
+      setIsMusicPlaying(true);
+    } else if ((!isActive || isBreak) && settings.backgroundMusic) {
+      setIsMusicPlaying(false);
+    }
   }, [isActive, isBreak, settings.backgroundMusic]);
+
+  const handleRefreshMusic = useCallback(() => {
+    const currentTrackId = settings.selectedMusic || 'nature-1';
+    const disliked = [...(settings.dislikedTracks || []), currentTrackId];
+    
+    // Find available tracks that are not disliked
+    const availableTracks = LOFI_TRACKS.filter(t => !disliked.includes(t.id));
+    
+    if (availableTracks.length > 0) {
+      const nextTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      setSettings({
+        ...settings,
+        dislikedTracks: disliked,
+        selectedMusic: nextTrack.id
+      });
+    } else {
+      // If all tracks are disliked, reset disliked list but keep current one as disliked for now
+      const nextTrack = LOFI_TRACKS.find(t => t.id !== currentTrackId) || LOFI_TRACKS[0];
+      setSettings({
+        ...settings,
+        dislikedTracks: [currentTrackId],
+        selectedMusic: nextTrack.id
+      });
+    }
+  }, [settings, setSettings]);
+
+  const handleLikeMusic = useCallback((id: string) => {
+    const liked = settings.likedTracks || [];
+    if (liked.includes(id)) {
+      setSettings({
+        ...settings,
+        likedTracks: liked.filter(t => t !== id)
+      });
+    } else {
+      setSettings({
+        ...settings,
+        likedTracks: [...liked, id]
+      });
+    }
+  }, [settings, setSettings]);
 
   const handleStart = () => {
     if (timeLeft > 0) {
@@ -402,23 +457,17 @@ export default function App() {
             onToggleTask={handleToggleTask}
             onDeleteTask={handleDeleteTask}
             onStartFromTask={handleStartFromTask}
+            isMusicPlaying={isMusicPlaying}
+            setIsMusicPlaying={setIsMusicPlaying}
+            selectedMusic={settings.selectedMusic || 'nature-1'}
+            onSelectMusic={(id) => setSettings({ ...settings, selectedMusic: id })}
+            likedTracks={settings.likedTracks || []}
+            dislikedTracks={settings.dislikedTracks || []}
+            onLikeMusic={handleLikeMusic}
+            onRefreshMusic={handleRefreshMusic}
           />
           
           <main className="flex-1 p-10 relative overflow-y-auto scrollbar-custom">
-            <div className="absolute top-10 right-10 flex gap-2">
-              {activeTab === 'home' && (
-                <>
-                  <button 
-                    onClick={() => setIsSocialCardOpen(true)}
-                    className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-[#4B5563] dark:text-white"
-                    title="Share Achievement"
-                  >
-                    <Share2 className="w-4 h-4 opacity-60" />
-                  </button>
-                </>
-              )}
-            </div>
-
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -466,6 +515,9 @@ export default function App() {
             modeName={MODES[currentMode].name}
             onToggle={isActive ? pauseTimer : handleStart}
             onExpand={() => setIsMinimized(false)}
+            isMusicPlaying={isMusicPlaying}
+            onToggleMusic={() => setIsMusicPlaying(!isMusicPlaying)}
+            showMusicControl={settings.backgroundMusic && !isBreak}
           />
         )}
       </AnimatePresence>

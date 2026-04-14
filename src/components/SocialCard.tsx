@@ -78,12 +78,12 @@ export const SocialCard: React.FC<SocialCardProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative max-w-md w-full"
+            className="relative w-[480px]"
           >
             <button
               onClick={onClose}
@@ -94,81 +94,77 @@ export const SocialCard: React.FC<SocialCardProps> = ({
 
             <div 
               ref={cardRef}
-              className="bg-[#F2F2F7] p-8 rounded-[40px] border border-black/5 overflow-hidden relative text-black"
+              className="bg-black p-6 rounded-[32px] border border-white/10 overflow-hidden relative text-white shadow-2xl"
+              style={{
+                background: 'linear-gradient(135deg, #000000 0%, #1A1A1A 100%)'
+              }}
             >
               {/* Background Accents */}
-              <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl opacity-50" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/20 rounded-full blur-3xl opacity-50" />
 
-              <div className="relative z-10 space-y-8">
+              <div className="relative z-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                      <Brain className="text-white w-5 h-5" />
+                    <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
+                      <Brain className="text-white w-4 h-4" />
                     </div>
-                    <span className="font-bold text-lg tracking-tight text-black">Promograd</span>
+                    <span className="font-bold text-base tracking-tight text-white">Promograd</span>
                   </div>
-                  <div className="text-xs font-bold opacity-40 uppercase tracking-widest text-black">
+                  <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest text-white">
                     {format(new Date(), 'MMMM yyyy')}
                   </div>
                 </div>
 
                 {/* Main Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-5 rounded-3xl border border-black/5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
                     <div className="flex items-center gap-2 text-orange-500 mb-1">
-                      <Flame className="w-4 h-4 fill-current" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Streak</span>
+                      <Flame className="w-3 h-3 fill-current" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider">Streak</span>
                     </div>
-                    <div className="text-3xl font-bold text-black">{streak} <span className="text-sm font-normal opacity-40">days</span></div>
+                    <div className="text-2xl font-bold text-white">{streak} <span className="text-xs font-normal opacity-40">days</span></div>
                   </div>
-                  <div className="bg-white p-5 rounded-3xl border border-black/5">
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
                     <div className="flex items-center gap-2 text-primary mb-1">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Focus</span>
+                      <Clock className="w-3 h-3" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider">Focus</span>
                     </div>
-                    <div className="text-3xl font-bold text-black">{totalTime} <span className="text-sm font-normal opacity-40">mins</span></div>
+                    <div className="text-2xl font-bold text-white">{totalTime} <span className="text-xs font-normal opacity-40">mins</span></div>
                   </div>
                 </div>
 
                 {/* Secondary Stats */}
-                <div className="bg-white p-6 rounded-3xl border border-black/5 space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 opacity-60">
-                      <Brain className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-black">Avg. Session</span>
+                      <Brain className="w-3 h-3" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-white">Avg. Session</span>
                     </div>
-                    <span className="text-lg font-bold text-black">{avgDuration}m</span>
+                    <span className="text-base font-bold text-white">{avgDuration}m</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 opacity-60">
-                      <Award className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-black">Focus Score</span>
+                      <Award className="w-3 h-3" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-white">Focus Score</span>
                     </div>
-                    <span className="text-lg font-bold text-black">{avgScore}/5</span>
+                    <span className="text-base font-bold text-white">{avgScore}/5</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-primary/5 border border-primary/10">
-                    <p className="text-[10px] font-medium leading-relaxed">
-                      You focused for <span className="text-primary font-bold">{weeklyTime} minutes</span> this week. 
-                      {weeklyTime > 300 ? " Exceptional consistency!" : " Keep building the habit!"}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-black/5">
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
                     <div className="flex items-center gap-2 opacity-60">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-black">Consistency</span>
+                      <Calendar className="w-3 h-3" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-white">Consistency</span>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-0.5">
                       {heatmapData.map((day, i) => (
                         <div
                           key={i}
                           className={cn(
-                            "w-2 h-2 rounded-[2px]",
-                            day.intensity === 0 && "bg-black/5",
+                            "w-1.5 h-1.5 rounded-[1px]",
+                            day.intensity === 0 && "bg-white/5",
                             day.intensity === 1 && "bg-primary/20",
                             day.intensity === 2 && "bg-primary/40",
                             day.intensity === 3 && "bg-primary/70",
@@ -180,27 +176,9 @@ export const SocialCard: React.FC<SocialCardProps> = ({
                   </div>
                 </div>
 
-                {/* Badges */}
-                <div className="flex justify-center gap-4">
-                  {badges.map(badge => (
-                    <div 
-                      key={badge.id}
-                      className={cn(
-                        "flex flex-col items-center gap-1 transition-all",
-                        badge.active ? "opacity-100 scale-100" : "opacity-10 grayscale scale-90"
-                      )}
-                    >
-                      <div className={cn("w-10 h-10 rounded-full bg-white border border-black/5 flex items-center justify-center", badge.color)}>
-                        <badge.icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-black">{badge.label}</span>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Footer */}
-                <div className="text-center pt-2">
-                  <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em] text-black">
+                <div className="text-center pt-1">
+                  <p className="text-[8px] font-bold opacity-30 uppercase tracking-[0.3em] text-white">
                     Master your focus with Promograd
                   </p>
                 </div>
@@ -210,9 +188,9 @@ export const SocialCard: React.FC<SocialCardProps> = ({
             <div className="mt-6 flex gap-3">
               <button
                 onClick={handleExport}
-                className="flex-1 bg-white dark:bg-white/10 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-black/5 dark:hover:bg-white/20 transition-all border border-black/10 dark:border-white/10"
+                className="flex-1 bg-white/10 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/20 transition-all border border-white/10 text-white"
               >
-                <Download className="w-5 h-5" />
+                <Download className="w-4 h-4" />
                 Export PNG
               </button>
               <button
@@ -220,9 +198,9 @@ export const SocialCard: React.FC<SocialCardProps> = ({
                   const text = `I've hit a ${streak} day focus streak on Promograd! 🚀 Total focus time: ${totalTime} mins.`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 }}
-                className="w-16 bg-primary text-white rounded-2xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                className="w-12 bg-primary text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg shadow-primary/20"
               >
-                <Share2 className="w-6 h-6" />
+                <Share2 className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
