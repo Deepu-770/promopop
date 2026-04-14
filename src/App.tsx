@@ -20,6 +20,7 @@ import { IntentionModal } from './components/IntentionModal';
 import { ReflectionModal } from './components/ReflectionModal';
 import { DailyReview } from './components/DailyReview';
 import { TitleBar } from './components/TitleBar';
+import { MusicPlayerModal } from './components/MusicPlayerModal';
 import { Category, TodoTask, DailyJournal } from './types';
 import { useTimer } from './hooks/useTimer';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -54,6 +55,7 @@ export default function App() {
   const [isIntentionModalOpen, setIsIntentionModalOpen] = useState(false);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [currentIntention, setCurrentIntention] = useState('');
   const [currentCategory, setCurrentCategory] = useState<Category>('Study');
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
@@ -285,6 +287,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const updateSettings = (s: Partial<Settings>) => {
+    setSettings(prev => ({ ...prev, ...s, theme: 'dark' as const }));
+  };
+
   const handleAddTask = (text: string) => {
     const newTask: TodoTask = {
       id: Math.random().toString(36).substr(2, 9),
@@ -333,6 +339,8 @@ export default function App() {
             onStart={handleStart}
             onPause={pauseTimer}
             onReset={resetTimer}
+            onMusicClick={() => setIsMusicModalOpen(true)}
+            isMusicPlaying={isMusicPlaying}
           />
         );
       case 'modes':
@@ -353,7 +361,7 @@ export default function App() {
           </div>
         );
       case 'analytics':
-        return <Analytics sessions={sessions} />;
+        return <Analytics sessions={sessions} tasks={tasks} />;
       case 'review':
         const todayId = new Date().toISOString().split('T')[0];
         return (
@@ -457,14 +465,6 @@ export default function App() {
             onToggleTask={handleToggleTask}
             onDeleteTask={handleDeleteTask}
             onStartFromTask={handleStartFromTask}
-            isMusicPlaying={isMusicPlaying}
-            setIsMusicPlaying={setIsMusicPlaying}
-            selectedMusic={settings.selectedMusic || 'nature-1'}
-            onSelectMusic={(id) => setSettings({ ...settings, selectedMusic: id })}
-            likedTracks={settings.likedTracks || []}
-            dislikedTracks={settings.dislikedTracks || []}
-            onLikeMusic={handleLikeMusic}
-            onRefreshMusic={handleRefreshMusic}
           />
           
           <main className="flex-1 p-10 relative overflow-y-auto scrollbar-custom">
@@ -503,6 +503,18 @@ export default function App() {
         streak={streak}
         totalTime={Math.round(sessions.reduce((acc, s) => acc + s.duration, 0) / 60)}
         sessions={sessions}
+      />
+
+      <MusicPlayerModal
+        isOpen={isMusicModalOpen}
+        onClose={() => setIsMusicModalOpen(false)}
+        isMusicPlaying={isMusicPlaying}
+        setIsMusicPlaying={setIsMusicPlaying}
+        selectedMusic={settings.selectedMusic || 'nature-1'}
+        onSelectMusic={(id) => updateSettings({ selectedMusic: id })}
+        likedTracks={settings.likedTracks || []}
+        onLikeMusic={handleLikeMusic}
+        dislikedTracks={settings.dislikedTracks || []}
       />
 
       {/* Floating Widget */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, Coffee, Brain, Flame } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Brain, Flame, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatTime, cn } from '@/src/lib/utils';
 
@@ -13,6 +13,8 @@ interface TimerDisplayProps {
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  onMusicClick?: () => void;
+  isMusicPlaying?: boolean;
 }
 
 export const TimerDisplay: React.FC<TimerDisplayProps> = ({
@@ -25,6 +27,8 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
   onStart,
   onPause,
   onReset,
+  onMusicClick,
+  isMusicPlaying,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-8">
@@ -124,7 +128,26 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
           )}
         </button>
 
-        <div className="w-16" /> {/* Spacer for balance */}
+        <button
+          onClick={onMusicClick}
+          className={cn(
+            "p-5 rounded-full transition-all active:scale-90 relative",
+            isMusicPlaying 
+              ? "bg-primary/20 text-primary border border-primary/20" 
+              : "bg-black/[0.03] dark:bg-white/5 hover:bg-black/[0.06] dark:hover:bg-white/10 text-[#0D0D0D] dark:text-white"
+          )}
+          title="Lo-fi Music"
+        >
+          <Music className="w-6 h-6" />
+          {isMusicPlaying && (
+            <motion.div
+              layoutId="music-glow"
+              className="absolute inset-0 rounded-full bg-primary/20 blur-md -z-10"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+          )}
+        </button>
       </div>
     </div>
   );

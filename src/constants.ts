@@ -1,3 +1,10 @@
+/**
+ * LO-FI MUSIC REGISTRY
+ * To add new music:
+ * 1. Add your audio file to the project (or use a URL)
+ * 2. Add a new entry to the LOFI_TRACKS array below
+ * 3. The system will automatically include it in the shuffle logic
+ */
 export const LOFI_TRACKS = [
   { id: 'nature-1', name: 'Rainforest Rain', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
   { id: 'nature-2', name: 'Ocean Waves', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },

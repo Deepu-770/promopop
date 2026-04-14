@@ -1,15 +1,17 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
-import { Session } from '@/src/types';
+import { Session, TodoTask } from '@/src/types';
 import { calculateStreak, cn } from '@/src/lib/utils';
 import { Flame } from 'lucide-react';
+import { HeatmapContainer } from './Heatmap/HeatmapContainer';
 
 interface AnalyticsProps {
   sessions: Session[];
+  tasks: TodoTask[];
 }
 
-export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks }) => {
   // Process data for the bar chart (last 7 days)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
@@ -187,85 +189,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
         </div>
       </div>
 
-      <div className="glass-panel p-8 rounded-3xl border border-white/10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h3 className="text-xl font-bold text-white">Focus Consistency</h3>
-            <p className="text-sm text-white/40">Your activity over the last year</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {/* Month Labels */}
-          <div className="flex pl-10 justify-between text-[10px] font-bold text-white/20 uppercase tracking-widest mb-1">
-            <span>Apr</span>
-            <span>May</span>
-            <span>Jun</span>
-            <span>Jul</span>
-            <span>Aug</span>
-            <span>Sep</span>
-            <span>Oct</span>
-            <span>Nov</span>
-            <span>Dec</span>
-            <span>Jan</span>
-            <span>Feb</span>
-            <span>Mar</span>
-            <span>Apr</span>
-          </div>
-
-          <div className="flex gap-4">
-            {/* Day Labels */}
-            <div className="flex flex-col justify-between py-1 text-[10px] font-bold text-white/20 uppercase tracking-tighter h-[100px]">
-              <span>Mon</span>
-              <span>Wed</span>
-              <span>Fri</span>
-            </div>
-
-            {/* Heatmap Grid */}
-            <div className="flex-1 flex gap-1 overflow-x-auto pb-4 scrollbar-hide">
-              {Array.from({ length: 53 }, (_, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1 shrink-0">
-                  {Array.from({ length: 7 }, (_, dayIndex) => {
-                    const dataIndex = weekIndex * 7 + dayIndex;
-                    if (dataIndex >= heatmapData.length) return null;
-                    const day = heatmapData[dataIndex];
-                    return (
-                      <div
-                        key={dayIndex}
-                        title={`${format(day.date, 'MMM d, yyyy')}: ${day.intensity} intensity`}
-                        className={cn(
-                          "w-3 h-3 rounded-[2px] transition-all duration-500",
-                          day.intensity === 0 && "bg-white/5",
-                          day.intensity === 1 && "bg-[#0e4429]",
-                          day.intensity === 2 && "bg-[#006d32]",
-                          day.intensity === 3 && "bg-[#26a641]",
-                          day.intensity === 4 && "bg-[#39d353]"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] text-white/20 font-medium">Learn how we count contributions</p>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/20">Less</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-[2px] bg-white/5" />
-                <div className="w-3 h-3 rounded-[2px] bg-[#0e4429]" />
-                <div className="w-3 h-3 rounded-[2px] bg-[#006d32]" />
-                <div className="w-3 h-3 rounded-[2px] bg-[#26a641]" />
-                <div className="w-3 h-3 rounded-[2px] bg-[#39d353]" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/20">More</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HeatmapContainer sessions={sessions} tasks={tasks} />
     </div>
   );
 };

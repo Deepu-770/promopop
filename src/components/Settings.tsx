@@ -120,18 +120,22 @@ export const Settings: React.FC<SettingsProps> = ({
           {settings.backgroundMusic && (
             <div className="pl-13 space-y-3">
               <label className="text-xs font-bold text-[#6E6E80] dark:text-white/40 uppercase tracking-wider">Select Nature Sound</label>
-              <select
-                value={settings.selectedMusic}
-                onChange={(e) => updateSettings({ selectedMusic: e.target.value })}
-                className="w-full bg-white/5 dark:bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none text-sm font-bold text-white/80 hover:bg-white/10 transition-all cursor-pointer appearance-none"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
-              >
-                {LOFI_TRACKS.filter(t => !(settings.dislikedTracks || []).includes(t.id)).map(track => (
-                  <option key={track.id} value={track.id} className="bg-[#1A1A1A] text-white">
-                    {track.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative group">
+                <select
+                  value={settings.selectedMusic}
+                  onChange={(e) => updateSettings({ selectedMusic: e.target.value })}
+                  className="w-full bg-white/5 dark:bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-sm font-bold text-white/80 hover:bg-white/10 transition-all cursor-pointer appearance-none ring-primary/20 focus:ring-4"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+                >
+                  {LOFI_TRACKS.filter(t => !(settings.dislikedTracks || []).includes(t.id)).map(track => (
+                    <option key={track.id} value={track.id} className="bg-[#1A1A1A] text-white">
+                      {track.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none group-hover:border-primary/30 transition-colors" />
+              </div>
+              <p className="text-[10px] text-white/20 font-medium italic">Showing 6 curated tracks based on your preferences. Use the sidebar to shuffle or like tracks.</p>
             </div>
           )}
         </div>
