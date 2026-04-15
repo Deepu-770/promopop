@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <div className="w-8 h-8 flex items-center justify-center">
                   <img 
-                    src="https://ais-dev-gknsin45thqjnkhvwlhekb-275467353680.asia-southeast1.run.app/api/files/6230820e-6a93-46c4-94e5-2d8954abc7be/logo.png" 
+                    src="/media/logo.svg" 
                     alt="Logo" 
                     className="w-8 h-8 object-contain"
                     referrerPolicy="no-referrer"
@@ -89,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="w-8 h-8 flex items-center justify-center shrink-0">
                 <img 
-                  src="https://ais-dev-gknsin45thqjnkhvwlhekb-275467353680.asia-southeast1.run.app/api/files/6230820e-6a93-46c4-94e5-2d8954abc7be/logo.png" 
+                  src="/media/logo.svg" 
                   alt="Logo" 
                   className="w-8 h-8 object-contain"
                   referrerPolicy="no-referrer"
@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 className="ml-3 text-lg font-normal tracking-tight truncate flex-1 text-[#0D0D0D] dark:text-white"
               >
-                Promograd
+                Tempo
               </motion.h1>
               
               <button

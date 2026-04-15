@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Settings as SettingsType } from '@/src/types';
 import { cn } from '@/src/lib/utils';
-import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Plus, X, Settings2, Clock, Zap, Github } from 'lucide-react';
+import { Bell, Volume2, Trash2, Download, Share2, Shield, Music, Plus, X, Settings2, Clock, Zap, Github, Cloud, TreePine, IdCard, Upload, FileJson, FileSpreadsheet, Play, Pause } from 'lucide-react';
 import { LOFI_TRACKS, APP_VERSION } from '../constants';
 
 interface SettingsProps {
@@ -11,6 +11,14 @@ interface SettingsProps {
   onExport: (format: 'json' | 'csv') => void;
   onImport: (data: any) => void;
   onOpenSocialCard: () => void;
+  driveSync?: {
+    login: () => void;
+    logout: () => void;
+    isConnected: boolean;
+    isSyncing: boolean;
+    lastSync: Date | null;
+    syncWithDrive: () => void;
+  };
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -20,6 +28,7 @@ export const Settings: React.FC<SettingsProps> = ({
   onExport,
   onImport,
   onOpenSocialCard,
+  driveSync,
 }) => {
   const [newApp, setNewApp] = useState('');
   const [newSite, setNewSite] = useState('');
@@ -39,6 +48,73 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.src = '';
+      }
+    };
+  }, []);
+
+  const togglePreview = () => {
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = new Audio();
+      previewAudioRef.current.loop = true;
+    }
+
+    if (isPreviewPlaying) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+    } else {
+      const track = LOFI_TRACKS.find(t => t.id === settings.selectedMusic);
+      if (track) {
+        if (previewAudioRef.current.src !== track.url) {
+          previewAudioRef.current.pause();
+          previewAudioRef.current.removeAttribute('src');
+          previewAudioRef.current.load();
+          previewAudioRef.current.src = track.url;
+        }
+        const playPromise = previewAudioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Preview playback failed:", error);
+            setIsPreviewPlaying(false);
+          });
+        }
+        setIsPreviewPlaying(true);
+      }
+    }
+  };
+
+  // Stop preview if selection changes
+  useEffect(() => {
+    let isCancelled = false;
+    if (isPreviewPlaying && previewAudioRef.current) {
+      const track = LOFI_TRACKS.find(t => t.id === settings.selectedMusic);
+      if (track && previewAudioRef.current.src !== track.url) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.removeAttribute('src');
+        previewAudioRef.current.load();
+        previewAudioRef.current.src = track.url;
+        const playPromise = previewAudioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            if (!isCancelled) {
+              console.error("Preview playback failed:", error);
+              setIsPreviewPlaying(false);
+            }
+          });
+        }
+      }
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [settings.selectedMusic, isPreviewPlaying]);
 
   const handleReset = () => {
     onResetData();
@@ -122,18 +198,18 @@ export const Settings: React.FC<SettingsProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
-                <Music className="w-5 h-5 text-green-500" />
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <TreePine className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
-                <div className="font-medium text-[#0D0D0D] dark:text-white">Background Music</div>
-                <div className="text-xs text-[#6E6E80] dark:text-white/50">Play lo-fi beats during focus</div>
+                <div className="font-medium text-[#0D0D0D] dark:text-white">Enable Tree Growing</div>
+                <div className="text-xs text-[#6E6E80] dark:text-white/50">Grow a tree while focusing</div>
               </div>
             </div>
             <input
               type="checkbox"
-              checked={settings.backgroundMusic}
-              onChange={(e) => updateSettings({ backgroundMusic: e.target.checked })}
+              checked={settings.enableTreeGrowing}
+              onChange={(e) => updateSettings({ enableTreeGrowing: e.target.checked })}
               className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
             />
           </div>
@@ -158,18 +234,18 @@ export const Settings: React.FC<SettingsProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                <Settings2 className="w-5 h-5 text-emerald-500" />
+              <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+                <Music className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <div className="font-medium text-[#0D0D0D] dark:text-white">Enable Tree Growing</div>
-                <div className="text-xs text-[#6E6E80] dark:text-white/50">Grow a tree while focusing</div>
+                <div className="font-medium text-[#0D0D0D] dark:text-white">Background Music</div>
+                <div className="text-xs text-[#6E6E80] dark:text-white/50">Play lo-fi beats during focus</div>
               </div>
             </div>
             <input
               type="checkbox"
-              checked={settings.enableTreeGrowing}
-              onChange={(e) => updateSettings({ enableTreeGrowing: e.target.checked })}
+              checked={settings.backgroundMusic}
+              onChange={(e) => updateSettings({ backgroundMusic: e.target.checked })}
               className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
             />
           </div>
@@ -177,22 +253,31 @@ export const Settings: React.FC<SettingsProps> = ({
           {settings.backgroundMusic && (
             <div className="pl-13 space-y-3">
               <label className="text-xs font-bold text-[#6E6E80] dark:text-white/40 uppercase tracking-wider">Select Nature Sound</label>
-              <div className="relative group">
-                <select
-                  value={settings.selectedMusic}
-                  onChange={(e) => updateSettings({ selectedMusic: e.target.value })}
-                  className="w-full bg-white/5 dark:bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-sm font-bold text-white/80 hover:bg-white/10 transition-all cursor-pointer appearance-none ring-primary/20 focus:ring-4"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+              <div className="flex items-center gap-3">
+                <div className="relative group flex-1">
+                  <select
+                    value={settings.selectedMusic}
+                    onChange={(e) => updateSettings({ selectedMusic: e.target.value })}
+                    className="w-full bg-white/5 dark:bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-sm font-bold text-white/80 hover:bg-white/10 transition-all cursor-pointer appearance-none ring-primary/20 focus:ring-4"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+                  >
+                    {LOFI_TRACKS.filter(t => !(settings.dislikedTracks || []).includes(t.id)).map(track => (
+                      <option key={track.id} value={track.id} className="bg-[#1A1A1A] text-white">
+                        {track.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none group-hover:border-primary/30 transition-colors" />
+                </div>
+                <button
+                  onClick={togglePreview}
+                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-primary/20"
+                  title="Preview Vibe"
                 >
-                  {LOFI_TRACKS.filter(t => !(settings.dislikedTracks || []).includes(t.id)).map(track => (
-                    <option key={track.id} value={track.id} className="bg-[#1A1A1A] text-white">
-                      {track.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none group-hover:border-primary/30 transition-colors" />
+                  {isPreviewPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                </button>
               </div>
-              <p className="text-[10px] text-white/20 font-medium italic">Showing 6 curated tracks based on your preferences. Use the sidebar to shuffle or like tracks.</p>
+              <p className="text-[10px] text-white/20 font-medium italic">Showing curated tracks based on your preferences. Use the sidebar to shuffle or like tracks.</p>
             </div>
           )}
         </div>
@@ -209,6 +294,11 @@ export const Settings: React.FC<SettingsProps> = ({
             <input
               type="number"
               value={settings.customFocusDuration}
+              onWheel={(e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1 : -1;
+                updateSettings({ customFocusDuration: Math.max(1, settings.customFocusDuration + delta) });
+              }}
               onChange={(e) => updateSettings({ customFocusDuration: parseInt(e.target.value) || 25 })}
               className="w-full bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 rounded-xl px-4 py-2 outline-none text-[#0D0D0D] dark:text-white font-bold"
             />
@@ -218,6 +308,11 @@ export const Settings: React.FC<SettingsProps> = ({
             <input
               type="number"
               value={settings.customBreakDuration}
+              onWheel={(e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1 : -1;
+                updateSettings({ customBreakDuration: Math.max(1, settings.customBreakDuration + delta) });
+              }}
               onChange={(e) => updateSettings({ customBreakDuration: parseInt(e.target.value) || 5 })}
               className="w-full bg-white/50 dark:bg-white/5 border border-[#E5E5E5] dark:border-white/10 rounded-xl px-4 py-2 outline-none text-[#0D0D0D] dark:text-white font-bold"
             />
@@ -272,7 +367,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <div className="glass-panel p-6 rounded-3xl space-y-4 border border-[#E5E5E5] dark:border-white/10">
         <div className="flex items-center gap-3">
-          <Share2 className="w-5 h-5 text-green-500" />
+          <IdCard className="w-5 h-5 text-green-500" />
           <h3 className="text-lg font-semibold text-[#0D0D0D] dark:text-white">Social & Sharing</h3>
         </div>
         <button
@@ -280,12 +375,40 @@ export const Settings: React.FC<SettingsProps> = ({
           className="w-full flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-all group"
         >
           <div className="flex items-center gap-3 text-primary">
-            <Share2 className="w-5 h-5" />
+            <IdCard className="w-5 h-5" />
             <span className="font-bold">Share Achievement Card</span>
           </div>
           <Plus className="w-5 h-5 text-primary opacity-40 group-hover:opacity-100" />
         </button>
       </div>
+
+      {driveSync && (
+        <div className="glass-panel p-6 rounded-3xl space-y-4 border border-[#E5E5E5] dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <Cloud className="w-5 h-5 text-blue-500" />
+            <h3 className="text-lg font-semibold text-[#0D0D0D] dark:text-white">Cloud Sync</h3>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            <div className="flex items-center gap-3">
+              <Cloud className="w-5 h-5 text-blue-500" />
+              <div>
+                <div className="font-medium text-[#0D0D0D] dark:text-white">Google Drive Sync</div>
+                <div className="text-xs text-[#6E6E80] dark:text-white/50">
+                  {driveSync.isConnected 
+                    ? (driveSync.isSyncing ? 'Syncing...' : `Last synced: ${driveSync.lastSync ? driveSync.lastSync.toLocaleTimeString() : 'Never'}`)
+                    : 'Auto-sync every 10 mins'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={driveSync.isConnected ? driveSync.logout : () => driveSync.login()}
+              className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-colors"
+            >
+              {driveSync.isConnected ? 'Disconnect' : 'Connect'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="glass-panel p-6 rounded-3xl space-y-4 border border-[#E5E5E5] dark:border-white/10">
         <div className="flex items-center gap-3">
@@ -294,8 +417,8 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
         
         <div className="flex flex-col gap-3">
-          <label className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white cursor-pointer">
-            <Download className="w-5 h-5 text-primary rotate-180" />
+          <label className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white cursor-pointer group">
+            <Upload className="w-5 h-5 text-primary group-hover:-translate-y-1 transition-transform" />
             <span className="font-medium">Import JSON/CSV Data</span>
             <input 
               type="file" 
@@ -305,11 +428,17 @@ export const Settings: React.FC<SettingsProps> = ({
                 const file = e.target.files?.[0];
                 if (file) {
                   const reader = new FileReader();
-                  reader.onload = (event) => {
+                  reader.onload = async (event) => {
                     const content = event.target?.result as string;
                     try {
                       const data = JSON.parse(content);
                       onImport(data);
+                      const confetti = (await import('canvas-confetti')).default;
+                      confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                      });
                       alert('Data imported successfully!');
                     } catch (error) {
                       alert('Error parsing JSON file. Please ensure it is a valid JSON.');
@@ -325,7 +454,7 @@ export const Settings: React.FC<SettingsProps> = ({
             onClick={() => onExport('json')}
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white"
           >
-            <Download className="w-5 h-5 text-primary" />
+            <FileJson className="w-5 h-5 text-primary" />
             <span className="font-medium">Export as JSON</span>
           </button>
           
@@ -333,7 +462,7 @@ export const Settings: React.FC<SettingsProps> = ({
             onClick={() => onExport('csv')}
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white"
           >
-            <Share2 className="w-5 h-5 text-secondary" />
+            <FileSpreadsheet className="w-5 h-5 text-secondary" />
             <span className="font-medium">Export as CSV</span>
           </button>
 
@@ -348,7 +477,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       <div className="flex flex-col items-center justify-center py-6 opacity-20">
-        <div className="text-[10px] font-bold uppercase tracking-[0.4em]">Promograd {APP_VERSION}</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.4em]">Tempo {APP_VERSION}</div>
         <div className="mt-2 text-[8px] font-medium">Built for Deep Focus</div>
       </div>
     </div>

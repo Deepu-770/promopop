@@ -47,9 +47,11 @@ const DEFAULT_SETTINGS: Settings = {
   enableTreeGrowing: false,
   treesGrown: 0,
   failedTrees: 0,
-  selectedMusic: 'nature-1',
+  selectedMusic: 'track-1',
   badges: BADGES,
 };
+
+import { useGoogleDriveSync } from './hooks/useGoogleDriveSync';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -75,6 +77,45 @@ export default function App() {
   const [journals, setJournals] = useLocalStorage<DailyJournal[]>('promograd_journals', []);
   const musicRef = React.useRef<HTMLAudioElement | null>(null);
   const onBreakCompleteRef = React.useRef<() => void>(() => {});
+
+  const getExportData = useCallback(() => ({
+    sessions,
+    tasks,
+    journals,
+    settings
+  }), [sessions, tasks, journals, settings]);
+
+  const handleImportData = useCallback((data: any) => {
+    if (data.sessions) setSessions(prev => {
+      const newSessions = data.sessions.filter((s: any) => !prev.find(p => p.id === s.id));
+      return [...prev, ...newSessions];
+    });
+    if (data.tasks) setTasks(prev => {
+      const newTasks = data.tasks.filter((t: any) => !prev.find(p => p.id === t.id));
+      return [...prev, ...newTasks];
+    });
+    if (data.journals) setJournals(prev => {
+      const newJournals = data.journals.filter((j: any) => !prev.find(p => p.id === j.id));
+      return [...prev, ...newJournals];
+    });
+    if (data.settings) setSettings(prev => ({ ...prev, ...data.settings }));
+  }, [setSessions, setTasks, setJournals, setSettings]);
+
+  const driveSync = useGoogleDriveSync(handleImportData, getExportData);
+
+  // Auto-sync every 10 minutes if connected
+  useEffect(() => {
+    if (!driveSync.isConnected) return;
+    
+    const interval = setInterval(() => {
+      if (navigator.onLine) {
+        driveSync.syncWithDrive();
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+
+    return () => clearInterval(interval);
+  }, [driveSync.isConnected, driveSync.syncWithDrive]);
+
 
   // Migration: Ensure settings has all required fields
   useEffect(() => {
@@ -108,7 +149,7 @@ export default function App() {
       new Notification(title, { body });
     }
     if (settings.sound) {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      const audio = new Audio('/media/notification.ogg');
       audio.play().catch(() => {});
     }
   }, [settings.notifications, settings.sound]);
@@ -222,24 +263,43 @@ export default function App() {
   }, [volume]);
 
   useEffect(() => {
+    let isCancelled = false;
+
     if (isMusicPlaying) {
       const allTracks = [...LOFI_TRACKS, ...localTracks];
       const track = allTracks.find(t => t.id === settings.selectedMusic);
       
       if (track) {
         if (!musicRef.current || musicRef.current.src !== track.url) {
-          if (musicRef.current) musicRef.current.pause();
+          if (musicRef.current) {
+            musicRef.current.pause();
+            musicRef.current.removeAttribute('src');
+            musicRef.current.load();
+          }
           musicRef.current = new Audio(track.url);
-          musicRef.current.loop = isLooping;
-          musicRef.current.volume = volume;
         }
-        musicRef.current.play().catch(() => {});
+        musicRef.current.loop = isLooping;
+        musicRef.current.volume = volume;
+        
+        const playPromise = musicRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            if (!isCancelled) {
+              console.error("Audio play error:", error);
+              setIsMusicPlaying(false);
+            }
+          });
+        }
       }
     } else {
       if (musicRef.current) {
         musicRef.current.pause();
       }
     }
+
+    return () => {
+      isCancelled = true;
+    };
   }, [settings.selectedMusic, isMusicPlaying, localTracks, volume, isLooping]);
 
   // Sync isMusicPlaying with settings.backgroundMusic when session starts
@@ -252,7 +312,7 @@ export default function App() {
   }, [isActive, isBreak, settings.backgroundMusic]);
 
   const handleRefreshMusic = useCallback(() => {
-    const currentTrackId = settings.selectedMusic || 'nature-1';
+    const currentTrackId = settings.selectedMusic || 'track-1';
     const disliked = [...(settings.dislikedTracks || []), currentTrackId];
     
     // Find available tracks that are not disliked
@@ -322,14 +382,45 @@ export default function App() {
     let mimeType = '';
     let fileName = `promograd_export_${new Date().toISOString().split('T')[0]}`;
 
+    const exportData = {
+      sessions,
+      tasks,
+      journals,
+      settings
+    };
+
     if (format === 'json') {
-      content = JSON.stringify(sessions, null, 2);
+      content = JSON.stringify(exportData, null, 2);
       mimeType = 'application/json';
       fileName += '.json';
     } else {
-      const headers = ['ID', 'Mode', 'Duration (s)', 'Timestamp'];
-      const rows = sessions.map(s => [s.id, s.mode, s.duration, s.timestamp]);
-      content = [headers, ...rows].map(r => r.join(',')).join('\n');
+      // CSV Export - Multi-section
+      const sections = [];
+      
+      // Sessions
+      sections.push('--- SESSIONS ---');
+      sections.push(['ID', 'Mode', 'Duration (s)', 'Timestamp', 'Completed', 'Tree Grown'].join(','));
+      sessions.forEach(s => sections.push([s.id, s.mode, s.duration, s.timestamp, s.completed, s.treeGrown].join(',')));
+      
+      // Tasks
+      sections.push('\n--- TASKS ---');
+      sections.push(['ID', 'Text', 'Completed', 'Created At', 'Completed At'].join(','));
+      tasks.forEach(t => sections.push([t.id, `"${t.text.replace(/"/g, '""')}"`, t.completed, t.createdAt, t.completedAt || ''].join(',')));
+      
+      // Journals
+      sections.push('\n--- JOURNALS ---');
+      sections.push(['ID', 'Content', 'Mood', 'Updated At'].join(','));
+      journals.forEach(j => sections.push([j.id, `"${j.content.replace(/"/g, '""')}"`, j.mood || '', j.updatedAt].join(',')));
+      
+      // Settings (Flattened)
+      sections.push('\n--- SETTINGS ---');
+      sections.push(['Key', 'Value'].join(','));
+      Object.entries(settings).forEach(([k, v]) => {
+        const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
+        sections.push([k, `"${val.replace(/"/g, '""')}"`].join(','));
+      });
+
+      content = sections.join('\n');
       mimeType = 'text/csv';
       fileName += '.csv';
     }
@@ -472,6 +563,7 @@ export default function App() {
             }}
             onExport={handleExport}
             onOpenSocialCard={() => setIsSocialCardOpen(true)}
+            driveSync={driveSync}
           />
         );
       case 'badges':
@@ -496,7 +588,7 @@ export default function App() {
             <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
               <Layers className="text-white w-3.5 h-3.5" />
             </div>
-            <span className="text-sm font-bold">Promograd</span>
+            <span className="text-sm font-bold">Tempo</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -522,7 +614,7 @@ export default function App() {
           onMinimize={() => setIsMinimized(true)}
           onMaximize={() => setIsMaximized(!isMaximized)}
           onClose={() => {
-            if (confirm("Are you sure you want to close Promograd?")) {
+            if (confirm("Are you sure you want to close Tempo?")) {
               setIsMinimized(true);
             }
           }}
@@ -580,7 +672,7 @@ export default function App() {
         onClose={() => setIsMusicModalOpen(false)}
         isMusicPlaying={isMusicPlaying}
         setIsMusicPlaying={setIsMusicPlaying}
-        selectedMusic={settings.selectedMusic || 'nature-1'}
+        selectedMusic={settings.selectedMusic || 'track-1'}
         onSelectMusic={(id) => updateSettings({ selectedMusic: id })}
         likedTracks={settings.likedTracks || []}
         onLikeMusic={handleLikeMusic}

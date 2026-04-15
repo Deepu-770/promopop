@@ -66,8 +66,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks, settings 
         <div className="glass-panel p-6 rounded-3xl border border-white/10">
           <div className="text-sm font-medium text-white/50 mb-1">Current Streak</div>
           <div className="flex items-center gap-2">
-            <div className="text-4xl font-bold text-white">{streak} <span className="text-lg font-normal text-white/40">days</span></div>
             {streak > 0 && <Flame className="w-6 h-6 text-orange-500 fill-current" />}
+            <div className="text-4xl font-bold text-white">{streak} <span className="text-lg font-normal text-white/40">days</span></div>
           </div>
         </div>
       </div>

@@ -110,7 +110,7 @@ export const SocialCard: React.FC<SocialCardProps> = ({
                     <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
                       <Brain className="text-white w-4 h-4" />
                     </div>
-                    <span className="font-bold text-base tracking-tight text-white">Promograd</span>
+                    <span className="font-bold text-base tracking-tight text-white">Tempo</span>
                   </div>
                   <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest text-white">
                     {format(new Date(), 'MMMM yyyy')}
@@ -179,7 +179,7 @@ export const SocialCard: React.FC<SocialCardProps> = ({
                 {/* Footer */}
                 <div className="text-center pt-1">
                   <p className="text-[8px] font-bold opacity-30 uppercase tracking-[0.3em] text-white">
-                    Master your focus with Promograd
+                    Master your focus with Tempo
                   </p>
                 </div>
               </div>
@@ -195,7 +195,7 @@ export const SocialCard: React.FC<SocialCardProps> = ({
               </button>
               <button
                 onClick={() => {
-                  const text = `I've hit a ${streak} day focus streak on Promograd! 🚀 Total focus time: ${totalTime} mins.`;
+                  const text = `I've hit a ${streak} day focus streak on Tempo! 🚀 Total focus time: ${totalTime} mins.`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 }}
                 className="w-12 bg-primary text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg shadow-primary/20"

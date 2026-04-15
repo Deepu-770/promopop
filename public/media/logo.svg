@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E88E5" />
+      <stop offset="100%" stop-color="#1565C0" />
+    </linearGradient>
+    <linearGradient id="wave-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E3F2FD" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg-grad)" />
+  
+  <!-- Bottom Wave -->
+  <path d="M0 384 C 128 256, 384 448, 512 320 L 512 512 L 0 512 Z" fill="url(#wave-grad)" />
+  
+  <!-- Timer Ring Background -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="28" />
+  
+  <!-- Timer Ring Progress (12 to 4 o'clock) -->
+  <path d="M 256 116 A 140 140 0 0 1 377 326" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" filter="url(#glow)" />
+  
+  <!-- Tomato Body -->
+  <path d="M 256 180 C 330 180 350 220 350 260 C 350 315 305 350 256 350 C 207 350 162 315 162 260 C 162 220 182 180 256 180 Z" fill="#FFFFFF" filter="url(#shadow)" />
+  
+  <!-- Tomato Leaves -->
+  <path d="M 256 180 Q 256 140 266 130 M 256 180 Q 210 165 190 180 M 256 180 Q 302 165 322 180" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Tick marks -->
+  <line x1="256" y1="420" x2="256" y2="445" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+  <line x1="185" y1="400" x2="170" y2="420" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+  <line x1="327" y1="400" x2="342" y2="420" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+</svg>

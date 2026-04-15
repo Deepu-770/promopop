@@ -15,7 +15,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onMaximize,
   onClose,
   isMaximized,
-  title = "Promograd"
+  title = "Tempo"
 }) => {
   return (
     <div className="h-10 flex items-center justify-between px-4 bg-white/80 dark:bg-black/20 backdrop-blur-md border-b border-[#E5E5E5] dark:border-white/5 select-none shrink-0 z-[110]">

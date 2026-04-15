@@ -16,7 +16,7 @@ export const TreeAnimation: React.FC<TreeAnimationProps> = ({ isActive, duration
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    audioRef.current = new Audio('https://actions.google.com/sounds/v1/notifications/positive_notification.ogg');
+    audioRef.current = new Audio('/media/notification.ogg');
     audioRef.current.load();
   }, []);
 
