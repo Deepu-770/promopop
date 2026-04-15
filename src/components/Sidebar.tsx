@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, BarChart2, Settings, Layers, Calendar, PanelLeftClose, PanelLeftOpen, Github, Play, Pause, Square, Music, Heart, RefreshCw, Volume2 } from 'lucide-react';
+import { Home, BarChart2, Settings, Layers, Calendar, PanelLeftClose, PanelLeftOpen, Github, Heart } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { TodoPanel } from './TodoPanel';
-import { TodoTask } from '../types';
-import { LOFI_TRACKS } from '../constants';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isPinned: boolean;
   setIsPinned: (v: boolean) => void;
-  tasks: TodoTask[];
-  onAddTask: (text: string) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  onStartFromTask: (task: TodoTask) => void;
+  enableTreeGrowing: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -23,11 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab, 
   isPinned,
   setIsPinned,
-  tasks,
-  onAddTask,
-  onToggleTask,
-  onDeleteTask,
-  onStartFromTask
+  enableTreeGrowing
 }) => {
   const menuItems = [
     { id: 'home', icon: Home, label: 'Home' },
@@ -35,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'analytics', icon: BarChart2, label: 'Analytics' },
     { id: 'review', icon: Calendar, label: 'Daily Review' },
     { id: 'settings', icon: Settings, label: 'Settings' },
+    ...(enableTreeGrowing ? [{ id: 'badges', icon: Heart, label: 'Badges' }] : []),
   ];
 
   const [isHovered, setIsHovered] = useState(false);
@@ -147,20 +137,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </motion.span>
           </button>
         ))}
-
-        <div className={cn(
-          "pt-4 transition-opacity duration-300",
-          isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}>
-          <TodoPanel
-            tasks={tasks}
-            onAddTask={onAddTask}
-            onToggleTask={onToggleTask}
-            onDeleteTask={onDeleteTask}
-            onStartFromTask={onStartFromTask}
-            isCollapsed={!isExpanded}
-          />
-        </div>
       </nav>
 
       {/* Footer Actions */}

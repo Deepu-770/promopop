@@ -1,28 +1,35 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
-import { Session, TodoTask } from '@/src/types';
+import { Session, TodoTask, Settings } from '@/src/types';
 import { calculateStreak, cn } from '@/src/lib/utils';
-import { Flame } from 'lucide-react';
+import { Flame, TreeDeciduous, XCircle, Target } from 'lucide-react';
 import { HeatmapContainer } from './Heatmap/HeatmapContainer';
 
 interface AnalyticsProps {
   sessions: Session[];
   tasks: TodoTask[];
+  settings: Settings;
 }
 
-export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks, settings }) => {
+  const isTreeEnabled = settings.enableTreeGrowing;
+
   // Process data for the bar chart (last 7 days)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
     const daySessions = (sessions || []).filter(s => isSameDay(new Date(s.timestamp), date));
     const totalMinutes = Math.round(daySessions.reduce((acc, s) => acc + s.duration, 0) / 60);
+    const treesPlanted = daySessions.filter(s => s.treeGrown).length;
     return {
       name: format(date, 'EEE'),
       minutes: totalMinutes,
+      trees: treesPlanted,
       date: format(date, 'MMM d'),
     };
   });
+
+  // ... (rest of the component)
 
   // Process data for the heatmap (last 365 days)
   const heatmapData = Array.from({ length: 365 }, (_, i) => {
@@ -35,28 +42,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks }) => {
   const totalFocusTime = Math.round((sessions || []).reduce((acc, s) => acc + s.duration, 0) / 60);
   const totalSessions = (sessions || []).length;
   const streak = calculateStreak(sessions || []);
+  const completedSessions = (sessions || []).filter(s => s.completed).length;
+  const successRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
-  // Comparison vs Last Week
-  const thisWeekMinutes = last7Days.reduce((acc, d) => acc + d.minutes, 0);
-  const lastWeekMinutes = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 13 - i);
-    const daySessions = (sessions || []).filter(s => isSameDay(new Date(s.timestamp), date));
-    return Math.round(daySessions.reduce((acc, s) => acc + s.duration, 0) / 60);
-  }).reduce((acc, m) => acc + m, 0);
-
-  const improvement = lastWeekMinutes > 0 
-    ? Math.round(((thisWeekMinutes - lastWeekMinutes) / lastWeekMinutes) * 100)
-    : 0;
-
-  // Focus Consistency Score (0-100)
-  const activeDaysLastYear = new Set(
-    (sessions || [])
-      .filter(s => new Date(s.timestamp) > subDays(new Date(), 365))
-      .map(s => format(new Date(s.timestamp), 'yyyy-MM-dd'))
-  ).size;
-  const consistencyScore = Math.round((activeDaysLastYear / 365) * 100);
-
-  // Average Session Quality
+  // Tree metrics
+  const totalTrees = (sessions || []).filter(s => s.treeGrown).length;
+  const failedTrees = (sessions || []).filter(s => s.completed && !s.treeGrown).length; // Simplified
   const avgQuality = (sessions || []).length > 0
     ? ((sessions || []).reduce((acc, s) => acc + (s.focusScore || 0), 0) / (sessions || []).length).toFixed(1)
     : 0;
@@ -69,17 +60,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks }) => {
           <div className="text-4xl font-bold text-white">{totalFocusTime} <span className="text-lg font-normal text-white/40">mins</span></div>
         </div>
         <div className="glass-panel p-6 rounded-3xl border border-white/10">
-          <div className="text-sm font-medium text-white/50 mb-1">Weekly Progress</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-4xl font-bold text-white">{thisWeekMinutes} <span className="text-lg font-normal text-white/40">m</span></div>
-            <div className={cn(
-              "text-sm font-bold flex items-center gap-0.5",
-              improvement >= 0 ? "text-green-500" : "text-red-500"
-            )}>
-              {improvement >= 0 ? '+' : ''}{improvement}%
-              <span className="text-[10px] text-white/40 font-normal ml-1">vs last week</span>
-            </div>
-          </div>
+          <div className="text-sm font-medium text-white/50 mb-1">Success Rate</div>
+          <div className="text-4xl font-bold text-white">{successRate}%</div>
         </div>
         <div className="glass-panel p-6 rounded-3xl border border-white/10">
           <div className="text-sm font-medium text-white/50 mb-1">Current Streak</div>
@@ -89,6 +71,32 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, tasks }) => {
           </div>
         </div>
       </div>
+
+      {isTreeEnabled && (
+        <div className="grid grid-cols-3 gap-6">
+          <div className="glass-panel p-6 rounded-3xl border border-white/10 flex items-center gap-4">
+            <TreeDeciduous className="w-10 h-10 text-green-500" />
+            <div>
+              <div className="text-sm font-medium text-white/50">Trees Planted</div>
+              <div className="text-3xl font-bold text-white">{totalTrees}</div>
+            </div>
+          </div>
+          <div className="glass-panel p-6 rounded-3xl border border-white/10 flex items-center gap-4">
+            <XCircle className="w-10 h-10 text-red-500" />
+            <div>
+              <div className="text-sm font-medium text-white/50">Failed Trees</div>
+              <div className="text-3xl font-bold text-white">{failedTrees}</div>
+            </div>
+          </div>
+          <div className="glass-panel p-6 rounded-3xl border border-white/10 flex items-center gap-4">
+            <Target className="w-10 h-10 text-primary" />
+            <div>
+              <div className="text-sm font-medium text-white/50">Focus Quality</div>
+              <div className="text-3xl font-bold text-white">{avgQuality}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
         <div className="glass-panel p-6 rounded-3xl border border-white/10">

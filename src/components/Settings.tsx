@@ -9,6 +9,7 @@ interface SettingsProps {
   updateSettings: (settings: Partial<SettingsType>) => void;
   onResetData: () => void;
   onExport: (format: 'json' | 'csv') => void;
+  onImport: (data: any) => void;
   onOpenSocialCard: () => void;
 }
 
@@ -17,6 +18,7 @@ export const Settings: React.FC<SettingsProps> = ({
   updateSettings,
   onResetData,
   onExport,
+  onImport,
   onOpenSocialCard,
 }) => {
   const [newApp, setNewApp] = useState('');
@@ -36,8 +38,27 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleReset = () => {
+    onResetData();
+    setShowResetConfirm(false);
+  };
+
   return (
     <div className="space-y-8 p-2 overflow-y-auto max-h-full pb-10">
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#171717] border border-white/10 rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-white">Reset All Data?</h3>
+            <p className="text-sm text-white/60">This will permanently delete all your sessions, tasks, and journal entries, and reset all settings to default. This action cannot be undone.</p>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors">Cancel</button>
+              <button onClick={handleReset} className="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors">Reset Data</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="glass-panel p-6 rounded-3xl space-y-6 border border-[#E5E5E5] dark:border-white/10">
         <div className="flex items-center gap-3">
           <Settings2 className="w-5 h-5 text-blue-500" />
@@ -113,6 +134,42 @@ export const Settings: React.FC<SettingsProps> = ({
               type="checkbox"
               checked={settings.backgroundMusic}
               onChange={(e) => updateSettings({ backgroundMusic: e.target.checked })}
+              className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center">
+                <Zap className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div>
+                <div className="font-medium text-[#0D0D0D] dark:text-white">Auto-start focus</div>
+                <div className="text-xs text-[#6E6E80] dark:text-white/50">Automatically start next session after break</div>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.autoStartFocus}
+              onChange={(e) => updateSettings({ autoStartFocus: e.target.checked })}
+              className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <Settings2 className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <div className="font-medium text-[#0D0D0D] dark:text-white">Enable Tree Growing</div>
+                <div className="text-xs text-[#6E6E80] dark:text-white/50">Grow a tree while focusing</div>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.enableTreeGrowing}
+              onChange={(e) => updateSettings({ enableTreeGrowing: e.target.checked })}
               className="w-10 h-5 rounded-full appearance-none bg-black/10 dark:bg-white/10 checked:bg-primary relative transition-colors cursor-pointer before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all"
             />
           </div>
@@ -237,6 +294,33 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
         
         <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white cursor-pointer">
+            <Download className="w-5 h-5 text-primary rotate-180" />
+            <span className="font-medium">Import JSON/CSV Data</span>
+            <input 
+              type="file" 
+              accept=".json,.csv" 
+              className="hidden" 
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const content = event.target?.result as string;
+                    try {
+                      const data = JSON.parse(content);
+                      onImport(data);
+                      alert('Data imported successfully!');
+                    } catch (error) {
+                      alert('Error parsing JSON file. Please ensure it is a valid JSON.');
+                    }
+                  };
+                  reader.readAsText(file);
+                }
+              }}
+            />
+          </label>
+
           <button
             onClick={() => onExport('json')}
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#0D0D0D] dark:text-white"
@@ -254,7 +338,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </button>
 
           <button
-            onClick={onResetData}
+            onClick={() => setShowResetConfirm(true)}
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors mt-2"
           >
             <Trash2 className="w-5 h-5" />

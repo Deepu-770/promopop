@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, isSameDay, startOfDay, getHours } from 'date-fns';
+import { TodoPanel } from './TodoPanel';
 import { Session, TodoTask, DailyJournal } from '@/src/types';
 import { cn, calculateStreak } from '@/src/lib/utils';
 import { 
   Target, CheckCircle2, Star, Clock, Calendar, Save, 
   TrendingUp, Zap, Award, Smile, Meh, Frown, 
-  Coffee, RefreshCcw, Save as SaveIcon
+  Coffee, RefreshCcw, Save as SaveIcon, Circle, Plus
 } from 'lucide-react';
 
 interface DailyReviewProps {
@@ -13,6 +14,10 @@ interface DailyReviewProps {
   tasks: TodoTask[];
   journal: DailyJournal | null;
   onSaveJournal: (content: string, mood?: string) => void;
+  onAddTask: (text: string) => void;
+  onToggleTask: (id: string) => void;
+  onDeleteTask: (id: string) => void;
+  onStartFromTask: (task: TodoTask) => void;
 }
 
 const MOODS = [
@@ -29,7 +34,16 @@ const PROMPTS = [
   "How did you handle distractions today?"
 ];
 
-export const DailyReview: React.FC<DailyReviewProps> = ({ sessions = [], tasks = [], journal, onSaveJournal }) => {
+export const DailyReview: React.FC<DailyReviewProps> = ({ 
+  sessions = [], 
+  tasks = [], 
+  journal, 
+  onSaveJournal, 
+  onAddTask, 
+  onToggleTask, 
+  onDeleteTask, 
+  onStartFromTask 
+}) => {
   const today = startOfDay(new Date());
   const todaySessions = useMemo(() => (sessions || []).filter(s => isSameDay(new Date(s.timestamp), today)), [sessions, today]);
   
@@ -108,6 +122,18 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ sessions = [], tasks =
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Today's Focus Section */}
+      <div className="space-y-3">
+        <TodoPanel
+          tasks={tasks}
+          onAddTask={onAddTask}
+          onToggleTask={onToggleTask}
+          onDeleteTask={onDeleteTask}
+          onStartFromTask={onStartFromTask}
+          isCollapsed={false}
+        />
       </div>
 
       {/* Daily Journal Section */}
@@ -189,24 +215,27 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ sessions = [], tasks =
                   {groupSessions.map((session) => (
                     <div
                       key={session.id}
-                      className="glass-panel rounded-xl p-4 flex items-center gap-4 border border-[#E5E5E5] dark:border-white/10"
+                      className="relative glass-panel rounded-xl p-4 flex items-center gap-4 border border-[#E5E5E5] dark:border-white/10"
                     >
-                      <div className="w-16 shrink-0 text-center border-r border-[#E5E5E5] dark:border-white/10 pr-4">
-                        <div className="text-sm font-bold italic tracking-tighter text-[#0D0D0D] dark:text-white">{format(new Date(session.timestamp), 'HH:mm')}</div>
+                      {/* Connector line */}
+                      <div className="absolute -left-4 top-1/2 w-4 h-px bg-[#E5E5E5] dark:bg-white/10" />
+
+                      <div className="w-20 shrink-0 text-center border-r border-[#E5E5E5] dark:border-white/10 pr-4">
+                        <div className="text-sm font-bold italic tracking-tighter text-[#0D0D0D] dark:text-white whitespace-nowrap">{format(new Date(session.timestamp), 'hh:mm a')}</div>
                         <div className="text-[8px] font-bold text-[#6E6E80] uppercase tracking-widest">{session.mode}</div>
                       </div>
 
                       <div className="flex-1 grid grid-cols-2 gap-4">
                         <div className="space-y-0.5">
-                          <div className="text-sm font-bold text-[#0D0D0D] dark:text-white">{session.intention || 'Deep Work Session'}</div>
-                          <div className="flex items-center gap-1.5 text-[8px] font-bold uppercase text-[#6E6E80] tracking-widest">
+                          <div className="flex items-center gap-1.5 text-[8px] font-bold uppercase text-primary tracking-widest">
                             <Target className="w-2.5 h-2.5" />
                             Intention
                           </div>
+                          <div className="text-sm font-bold text-[#0D0D0D] dark:text-white">{session.intention || 'Deep Work Session'}</div>
                         </div>
                         <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-[8px] font-bold uppercase text-[#6E6E80] tracking-widest">
-                            <CheckCircle2 className="w-2.5 h-2.5 text-green-500" />
+                          <div className="flex items-center gap-1.5 text-[8px] font-bold uppercase text-green-500 tracking-widest">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
                             Outcome
                           </div>
                           <div className="text-xs font-medium italic text-[#6E6E80] line-clamp-1">
@@ -221,7 +250,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ sessions = [], tasks =
                           <span className="text-sm font-bold tracking-tighter text-[#0D0D0D] dark:text-white">{session.focusScore || 0}/5</span>
                         </div>
                         <div className="text-sm font-bold uppercase tracking-tighter text-[#0D0D0D] dark:text-white opacity-60">
-                          {Math.round(session.duration / 60)}m
+                          {Math.round(session.duration / 60)}Mins
                         </div>
                       </div>
                     </div>

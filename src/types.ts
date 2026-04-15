@@ -21,6 +21,14 @@ export interface Session {
   focusScore?: number; // 1-5
   category?: Category;
   taskId?: string;
+  completed: boolean; // Added
+  treeGrown: boolean; // Added
+}
+
+export interface Track {
+  id: string;
+  name: string;
+  url: string;
 }
 
 export interface TodoTask {
@@ -28,6 +36,7 @@ export interface TodoTask {
   text: string;
   completed: boolean;
   createdAt: string;
+  completedAt?: string;
 }
 
 export interface DailyJournal {
@@ -35,6 +44,19 @@ export interface DailyJournal {
   content: string;
   mood?: string;
   updatedAt: string;
+}
+
+export interface Badge {
+  id: string;
+  title: string;
+  category: 'Progress' | 'Consistency' | 'Performance';
+  condition: string;
+  benchmark: number;
+  treesBenchmark: number;
+  hoursBenchmark: number;
+  progress: number;
+  unlocked: boolean;
+  icon: string;
 }
 
 export interface Settings {
@@ -47,9 +69,14 @@ export interface Settings {
   blockedWebsites: string[];
   autoDND: boolean;
   backgroundMusic: boolean;
+  autoStartFocus: boolean;
+  enableTreeGrowing: boolean;
+  treesGrown: number;
+  failedTrees: number; // Added
   selectedMusic?: string;
   likedTracks?: string[];
   dislikedTracks?: string[];
+  badges: Badge[]; // Added
 }
 
 export const MODES: Record<FocusMode, ModeConfig> = {

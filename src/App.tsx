@@ -19,18 +19,19 @@ import { SocialCard } from './components/SocialCard';
 import { IntentionModal } from './components/IntentionModal';
 import { ReflectionModal } from './components/ReflectionModal';
 import { DailyReview } from './components/DailyReview';
+import { Badges } from './components/Badges';
 import { TitleBar } from './components/TitleBar';
 import { MusicPlayerModal } from './components/MusicPlayerModal';
 import { Category, TodoTask, DailyJournal } from './types';
 import { useTimer } from './hooks/useTimer';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { FocusMode, MODES, Session, Settings } from './types';
+import { FocusMode, MODES, Session, Settings, Track } from './types';
 import { calculateStreak, cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Share2, Layers } from 'lucide-react';
 
-import { LOFI_TRACKS, APP_VERSION } from './constants';
+import { LOFI_TRACKS, APP_VERSION, BADGES } from './constants';
 
 const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
@@ -42,7 +43,12 @@ const DEFAULT_SETTINGS: Settings = {
   blockedWebsites: [],
   autoDND: true,
   backgroundMusic: false,
+  autoStartFocus: false,
+  enableTreeGrowing: false,
+  treesGrown: 0,
+  failedTrees: 0,
   selectedMusic: 'nature-1',
+  badges: BADGES,
 };
 
 export default function App() {
@@ -55,6 +61,10 @@ export default function App() {
   const [isIntentionModalOpen, setIsIntentionModalOpen] = useState(false);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [isLooping, setIsLooping] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [localTracks, setLocalTracks] = useState<Track[]>([]);
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [currentIntention, setCurrentIntention] = useState('');
   const [currentCategory, setCurrentCategory] = useState<Category>('Study');
@@ -64,10 +74,17 @@ export default function App() {
   const [tasks, setTasks] = useLocalStorage<TodoTask[]>('promograd_tasks', []);
   const [journals, setJournals] = useLocalStorage<DailyJournal[]>('promograd_journals', []);
   const musicRef = React.useRef<HTMLAudioElement | null>(null);
+  const onBreakCompleteRef = React.useRef<() => void>(() => {});
 
   // Migration: Ensure settings has all required fields
   useEffect(() => {
     const migratedSettings = { ...DEFAULT_SETTINGS, ...settings, theme: 'dark' as const };
+    
+    // Force update if badges are missing or old structure
+    if (!settings.badges || settings.badges.length === 0 || !('treesBenchmark' in (settings.badges[0] || {}))) {
+      migratedSettings.badges = BADGES;
+    }
+
     if (JSON.stringify(migratedSettings) !== JSON.stringify(settings)) {
       setSettings(migratedSettings);
     }
@@ -118,7 +135,7 @@ export default function App() {
     startTimer(breakDur, true);
   }, [currentMode, settings.customBreakDuration, notify]);
 
-  const onReflectionComplete = useCallback((outcome: string, score: number) => {
+  const onReflectionComplete = useCallback((outcome: string, score: number, treeGrown: boolean = false) => {
     const newSession: Session = {
       id: Math.random().toString(36).substr(2, 9),
       mode: currentMode,
@@ -130,9 +147,29 @@ export default function App() {
       focusScore: score,
       category: currentCategory,
       taskId: currentTaskId || undefined,
+      completed: true,
+      treeGrown,
     };
     setSessions((prev) => [...prev, newSession]);
     
+    // Update badges
+    const totalTrees = settings.treesGrown + (treeGrown ? 1 : 0);
+    const totalHours = (sessions.reduce((acc, s) => acc + s.duration, 0) + newSession.duration) / 3600;
+    
+    const updatedBadges = settings.badges.map(badge => {
+      const progress = Math.min(
+        100,
+        Math.round(((totalTrees / badge.treesBenchmark) + (totalHours / badge.hoursBenchmark)) / 2 * 100)
+      );
+      
+      return {
+        ...badge,
+        progress: progress,
+        unlocked: progress >= 100
+      };
+    });
+    setSettings(prev => ({ ...prev, badges: updatedBadges, treesGrown: totalTrees }));
+
     if (currentTaskId) {
       const task = tasks.find(t => t.id === currentTaskId);
       if (task) {
@@ -144,16 +181,11 @@ export default function App() {
     setIsReflectionModalOpen(false);
     setCurrentIntention('');
     setCurrentTaskId(null);
-  }, [currentMode, currentIntention, currentCategory, currentTaskId, tasks, setSessions]);
+  }, [currentMode, currentIntention, currentCategory, currentTaskId, tasks, setSessions, settings, setSettings, sessions]);
 
   const onBreakComplete = useCallback(() => {
-    notify('Break Over!', 'Ready to focus again?');
-    
-    // Auto-start focus
-    const mode = MODES[currentMode];
-    const focusDur = currentMode === 'custom' ? settings.customFocusDuration : mode.focusDuration;
-    startTimer(focusDur, false);
-  }, [currentMode, settings.customFocusDuration, notify]);
+    onBreakCompleteRef.current();
+  }, []);
 
   const {
     timeLeft,
@@ -169,22 +201,46 @@ export default function App() {
     onBreakComplete,
   });
 
+  useEffect(() => {
+    onBreakCompleteRef.current = () => {
+      notify('Break Over!', 'Ready to focus again?');
+      
+      // Auto-start focus
+      if (settings.autoStartFocus) {
+        const mode = MODES[currentMode];
+        const focusDur = currentMode === 'custom' ? settings.customFocusDuration : mode.focusDuration;
+        startTimer(focusDur, false);
+      }
+    };
+  }, [currentMode, settings.customFocusDuration, settings.autoStartFocus, notify, startTimer]);
+
   // Background Music Logic
   useEffect(() => {
+    if (musicRef.current) {
+      musicRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  useEffect(() => {
     if (isMusicPlaying) {
-      const track = LOFI_TRACKS.find(t => t.id === settings.selectedMusic) || LOFI_TRACKS[0];
-      if (!musicRef.current || musicRef.current.src !== track.url) {
-        if (musicRef.current) musicRef.current.pause();
-        musicRef.current = new Audio(track.url);
-        musicRef.current.loop = true;
+      const allTracks = [...LOFI_TRACKS, ...localTracks];
+      const track = allTracks.find(t => t.id === settings.selectedMusic);
+      
+      if (track) {
+        if (!musicRef.current || musicRef.current.src !== track.url) {
+          if (musicRef.current) musicRef.current.pause();
+          musicRef.current = new Audio(track.url);
+          musicRef.current.loop = isLooping;
+          musicRef.current.volume = volume;
+        }
+        musicRef.current.play().catch(() => {});
       }
-      musicRef.current.play().catch(() => {});
     } else {
       if (musicRef.current) {
         musicRef.current.pause();
       }
     }
-  }, [settings.selectedMusic, isMusicPlaying]);
+  }, [settings.selectedMusic, isMusicPlaying, localTracks, volume, isLooping]);
 
   // Sync isMusicPlaying with settings.backgroundMusic when session starts
   useEffect(() => {
@@ -304,7 +360,11 @@ export default function App() {
   const handleToggleTask = (id: string) => {
     setTasks(prev => prev.map(t => {
       if (t.id === id) {
-        return { ...t, completed: !t.completed };
+        return { 
+          ...t, 
+          completed: !t.completed,
+          completedAt: !t.completed ? new Date().toISOString() : undefined
+        };
       }
       return t;
     }));
@@ -341,6 +401,9 @@ export default function App() {
             onReset={resetTimer}
             onMusicClick={() => setIsMusicModalOpen(true)}
             isMusicPlaying={isMusicPlaying}
+            enableTreeGrowing={settings.enableTreeGrowing}
+            onTreeGrown={() => updateSettings({ treesGrown: (settings.treesGrown || 0) + 1 })}
+            onTreeDied={() => updateSettings({ failedTrees: (settings.failedTrees || 0) + 1 })}
           />
         );
       case 'modes':
@@ -361,7 +424,7 @@ export default function App() {
           </div>
         );
       case 'analytics':
-        return <Analytics sessions={sessions} tasks={tasks} />;
+        return <Analytics sessions={sessions} tasks={tasks} settings={settings} />;
       case 'review':
         const todayId = new Date().toISOString().split('T')[0];
         return (
@@ -381,6 +444,10 @@ export default function App() {
                 return [...filtered, newJournal];
               });
             }}
+            onAddTask={handleAddTask}
+            onToggleTask={handleToggleTask}
+            onDeleteTask={handleDeleteTask}
+            onStartFromTask={handleStartFromTask}
           />
         );
       case 'settings':
@@ -392,16 +459,23 @@ export default function App() {
               setSettings(newSettings);
             }}
             onResetData={async () => {
-              if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
-                setSessions([]);
-                setTasks([]);
-                setJournals([]);
-              }
+              setSessions([]);
+              setTasks([]);
+              setJournals([]);
+              setSettings(DEFAULT_SETTINGS);
+            }}
+            onImport={(data) => {
+              if (data.sessions) setSessions(prev => [...prev, ...data.sessions]);
+              if (data.tasks) setTasks(prev => [...prev, ...data.tasks]);
+              if (data.journals) setJournals(prev => [...prev, ...data.journals]);
+              if (data.settings) setSettings(prev => ({ ...prev, ...data.settings }));
             }}
             onExport={handleExport}
             onOpenSocialCard={() => setIsSocialCardOpen(true)}
           />
         );
+      case 'badges':
+        return <Badges badges={settings.badges} />;
       default:
         return null;
     }
@@ -460,11 +534,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             isPinned={isSidebarPinned}
             setIsPinned={setIsSidebarPinned}
-            tasks={tasks}
-            onAddTask={handleAddTask}
-            onToggleTask={handleToggleTask}
-            onDeleteTask={handleDeleteTask}
-            onStartFromTask={handleStartFromTask}
+            enableTreeGrowing={settings.enableTreeGrowing}
           />
           
           <main className="flex-1 p-10 relative overflow-y-auto scrollbar-custom">
@@ -515,6 +585,14 @@ export default function App() {
         likedTracks={settings.likedTracks || []}
         onLikeMusic={handleLikeMusic}
         dislikedTracks={settings.dislikedTracks || []}
+        localTracks={localTracks}
+        setLocalTracks={setLocalTracks}
+        volume={volume}
+        setVolume={setVolume}
+        isLooping={isLooping}
+        setIsLooping={setIsLooping}
+        isShuffling={isShuffling}
+        setIsShuffling={setIsShuffling}
       />
 
       {/* Floating Widget */}
